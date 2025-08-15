@@ -2,59 +2,22 @@ import streamlit as st
 import json
 import re
 import requests
-import os
+import uuid
 from datetime import datetime
-from mistralai import Mistral
+from mistralai.client import MistralClient
 
-# ==== CONFIGURACIÓN DE ADMINISTRADOR ====
-# Para simplicidad, removemos el admin mode - la gestión de logs es opcional
-
-# ==== Configuración del chatbot ====
-system_message = (
-    "Eres Mindly, un chatbot empático, accesible y profesional. "
-    "Tu objetivo es ayudar a los usuarios a encontrar información clara y confiable sobre psicología. "
-    "Responde de forma cercana, sin usar jerga técnica, y adapta tus respuestas según la intención del usuario. "
-    "Si notas que alguien necesita apoyo emocional urgente, sugiérele que busque ayuda profesional inmediata."
-)
-
-LOG_FILE = "chat_log.json"
+ADMIN_MODE = st.query_params.get("admin") == "true"
 MAX_HISTORY = 8
+LOG_FILE = "chat_log.json"
 
-# Obtener API key de forma segura
-MISTRAL_API_KEY = st.secrets.get("MISTRAL_API_KEY", os.getenv("MISTRAL_API_KEY", ""))
-
-# Si no hay API key configurada, pedirla en la interfaz
+MISTRAL_API_KEY = st.secrets.get("mistralapi")
 if not MISTRAL_API_KEY:
-    st.warning("🔑 Se requiere configurar la API key de Mistral")
-    with st.sidebar:
-        st.markdown("### ⚙️ Configuración")
-        st.info("💡 Obtén tu API key en: https://console.mistral.ai/")
-        api_key_input = st.text_input(
-            "API Key de Mistral:", 
-            value="",
-            type="password",
-            help="Introduce tu API key de Mistral"
-        )
-        if api_key_input and len(api_key_input) > 10:
-            MISTRAL_API_KEY = api_key_input
-            st.success("✅ API Key configurada")
-        else:
-            st.error("👆 Configura tu API key para continuar")
-            st.stop()
+    st.error("Error: La clave 'mistralapi' no está configurada en los secretos de Streamlit.")
+    st.stop()
 
-# Crear cliente de Mistral
-try:
-    client = Mistral(api_key=MISTRAL_API_KEY)
-except Exception as e:
-    st.error(f"❌ Error con la API key: {str(e)}")
-    st.stop() 
-
-# ==== CONFIGURACIÓN DE GIST ====
 GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
 GIST_ID = st.secrets.get("GIST_ID", "")
-
-# ==== CONFIGURACIÓN DE HISTORIAL DE USUARIO ====
-USER_SESSIONS_FILE = "user_sessions.json"
+GIST_FILENAME = "chat_log.json"
 
 class GistManager:
     def __init__(self, token, gist_id=None):
@@ -66,7 +29,6 @@ class GistManager:
         }
     
     def crear_gist(self, filename, content, description="Chat logs de Mindly"):
-        """Crear un nuevo Gist"""
         data = {
             "description": description,
             "public": False,
@@ -76,13 +38,11 @@ class GistManager:
                 }
             }
         }
-        
         response = requests.post(
             "https://api.github.com/gists",
             headers=self.headers,
             json=data
         )
-        
         if response.status_code == 201:
             gist_data = response.json()
             self.gist_id = gist_data["id"]
@@ -91,10 +51,8 @@ class GistManager:
             return False, None, response.json()
     
     def actualizar_gist(self, filename, content):
-        """Actualizar un Gist existente"""
         if not self.gist_id:
             return False, "No hay Gist ID configurado"
-        
         data = {
             "files": {
                 filename: {
@@ -102,37 +60,30 @@ class GistManager:
                 }
             }
         }
-        
         response = requests.patch(
             f"https://api.github.com/gists/{self.gist_id}",
             headers=self.headers,
             json=data
         )
-        
         if response.status_code == 200:
             return True, response.json()["html_url"]
         else:
             return False, response.json()
     
     def obtener_gist(self):
-        """Obtener contenido del Gist"""
         if not self.gist_id:
             return False, "No hay Gist ID configurado"
-        
         response = requests.get(
             f"https://api.github.com/gists/{self.gist_id}",
             headers=self.headers
         )
-        
         if response.status_code == 200:
             return True, response.json()
         else:
             return False, response.json()
     
     def subir_logs(self, logs_data):
-        """Subir logs al Gist"""
         content = json.dumps(logs_data, ensure_ascii=False, indent=2)
-        
         if self.gist_id:
             success, result = self.actualizar_gist("chat_log.json", content)
             return success, result
@@ -142,8 +93,31 @@ class GistManager:
                 st.session_state.gist_id = gist_id
             return success, url if success else gist_id
 
-# ==== Función para verificar acceso de administrador ====
-# Removida - no necesaria para uso simple
+def verificar_admin():
+    """Verifica si el usuario actual es administrador"""
+    if not ADMIN_MODE:
+        return False
+    
+    # Opción 1: Solo basado en la variable ADMIN_MODE
+    return True
+    
+    # Opción 2: Con contraseña (descomenta para usar)
+    # if 'admin_authenticated' not in st.session_state:
+    #     st.session_state.admin_authenticated = False
+    # 
+    # if not st.session_state.admin_authenticated:
+    #     with st.sidebar:
+    #         st.markdown("### 🔐 Acceso de Administrador")
+    #         password = st.text_input("Contraseña:", type="password")
+    #         if st.button("Iniciar Sesión"):
+    #             if password == ADMIN_PASSWORD:
+    #                 st.session_state.admin_authenticated = True
+    #                 st.rerun()
+    #             else:
+    #                 st.error("Contraseña incorrecta")
+    #         return False
+    # 
+    # return True
 
 # ==== PERSONALIZACIÓN DE ESTILOS ====
 def load_custom_css():
@@ -401,35 +375,26 @@ try:
 except FileNotFoundError:
     chat_log = []
 
-# ==== Cargar sesiones de usuarios ====
-try:
-    with open(USER_SESSIONS_FILE, "r", encoding="utf-8") as f:
-        user_sessions = json.load(f)
-except FileNotFoundError:
-    user_sessions = {}
+# ===== INICIALIZACIÓN DE VARIABLES DE SESIÓN (CAMBIO #1) =====
+# MOVER AQUÍ - AL PRINCIPIO, DESPUÉS DE CARGAR LOS ARCHIVOS
+if 'history' not in st.session_state:
+    st.session_state.history = []
+
+if "gist_id" not in st.session_state:
+    st.session_state.gist_id = GIST_ID
+
+if "current_session_id" not in st.session_state:
+    st.session_state.current_session_id = str(uuid.uuid4())[:8]
+
+# CAMBIO #4 - Inicializar all_sessions_log con datos existentes
+if 'all_sessions_log' not in st.session_state:
+    st.session_state.all_sessions_log = user_sessions.copy()
 
 # ==== Funciones para historial de usuario ====
 def generar_session_id():
     """Genera un ID único para la sesión"""
     import uuid
     return str(uuid.uuid4())[:8]
-
-def guardar_sesion_usuario(session_id, historia, titulo=None):
-    """Guarda la sesión del usuario"""
-    if not titulo:
-        # Generar título basado en el primer mensaje del usuario
-        primer_mensaje = next((msg["content"] for msg in historia if msg["role"] == "user"), "")
-        titulo = (primer_mensaje[:30] + "...") if len(primer_mensaje) > 30 else primer_mensaje
-    
-    user_sessions[session_id] = {
-        "titulo": titulo,
-        "timestamp": datetime.now().isoformat(),
-        "mensajes": len([msg for msg in historia if msg["role"] == "user"]),
-        "historia": historia
-    }
-    
-    with open(USER_SESSIONS_FILE, "w", encoding="utf-8") as f:
-        json.dump(user_sessions, f, ensure_ascii=False, indent=2)
 
 def cargar_sesion_usuario(session_id):
     """Carga una sesión específica del usuario"""
@@ -441,6 +406,8 @@ def eliminar_sesion_usuario(session_id):
         del user_sessions[session_id]
         with open(USER_SESSIONS_FILE, "w", encoding="utf-8") as f:
             json.dump(user_sessions, f, ensure_ascii=False, indent=2)
+        # Sincronizar con session_state
+        st.session_state.all_sessions_log = user_sessions.copy()
 
 # ==== Funciones del chatbot ====
 def detectar_intencion(mensaje):
@@ -468,32 +435,48 @@ def guardar_log(usuario_msg, modelo_resp, intencion):
         json.dump(chat_log, f, ensure_ascii=False, indent=2)
 
 def chat(message, history):
-    try:
-        messages = [{"role": "system", "content": system_message}]
-        messages.extend(history[-MAX_HISTORY*2:])
-        messages.append({"role": "user", "content": message})
-
-        response = client.chat.complete(
-            model="mistral-large-latest",
-            messages=messages
-        )
-
-        return response.choices[0].message.content
+    system_message = """
+        Eres Mindly, un chatbot empático, accesible y profesional.
+        Tu objetivo es ayudar a los usuarios a encontrar información clara y confiable sobre psicología.
+        Responde de forma cercana, sin usar jerga técnica, y adapta tus respuestas según la intención del usuario.
+        Si notas que alguien necesita apoyo emocional urgente, sugiérele que busque ayuda profesional inmediata.
+        Utiliza siempre Markdown para dar formato a tus respuestas. Usa listas, negritas y encabezados para que la información sea clara y fácil de leer. Asegúrate de usar saltos de línea para separar las ideas.
+    """
+    messages = [{"role": "system", "content": system_message.strip()}]
+    messages.extend(history[-MAX_HISTORY*2:])
+    messages.append({"role": "user", "content": message})
     
-    except Exception as e:
-        # Manejo de errores más detallado
-        error_msg = str(e)
-        if "401" in error_msg or "unauthorized" in error_msg.lower():
-            return "❌ Error de autenticación: La API key parece ser incorrecta. Por favor verifica tu clave de Mistral."
-        elif "429" in error_msg or "rate limit" in error_msg.lower():
-            return "⏳ Límite de solicitudes alcanzado. Por favor espera un momento antes de intentar de nuevo."
-        elif "400" in error_msg or "bad request" in error_msg.lower():
-            return "⚠️ Error en la solicitud. El mensaje puede ser demasiado largo o contener caracteres no válidos."
-        elif "500" in error_msg or "internal server error" in error_msg.lower():
-            return "🔧 Error del servidor de Mistral. Por favor intenta de nuevo en unos momentos."
-        else:
-            return f"❌ Error inesperado: {error_msg}. Por favor verifica tu conexión e intenta de nuevo."
-
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {st.secrets.get('mistralapi')}"
+    }
+    payload = {
+        "model": "mistral-large-latest",
+        "messages": messages
+    }
+    
+    try:
+        response = requests.post(
+            "https://api.mistral.ai/v1/chat/completions",
+            headers=headers,
+            json=payload
+        )
+        response.raise_for_status()
+        response_data = response.json()
+        respuesta_final = response_data["choices"][0]["message"]["content"]
+        
+        respuesta_final = re.sub(r'🔹\s?', '\n- ', respuesta_final)
+        respuesta_final = re.sub(r'(\n|\s)(Fundador:|En qué se enfoca:|Ejemplo:|Técnicas:)', r'\n\n\2', respuesta_final, flags=re.IGNORECASE)
+        respuesta_final = respuesta_final.strip()
+        
+        return respuesta_final
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error al conectar con la API de Mistral: {e}")
+        return "Lo siento, tuve un problema técnico y no puedo responder en este momento."
+    except KeyError:
+        st.error("Error al procesar la respuesta de la API de Mistral.")
+        return "Lo siento, la respuesta de la API no es válida."
+        
 # ==== Interfaz en Streamlit ====
 st.set_page_config(
     page_title="Mindly - Chat de Psicología", 
@@ -505,6 +488,17 @@ st.set_page_config(
 # Aplicar estilos personalizados
 load_custom_css()
 
+# Verificar si es administrador
+is_admin = verificar_admin()
+
+# Indicador visual de modo administrador (solo lo ves tú)
+if is_admin:
+    st.markdown("""
+    <div class="admin-indicator">
+        👑 Modo Administrador
+    </div>
+    """, unsafe_allow_html=True)
+
 # Header con diseño mejorado
 st.markdown("""
     <div style="text-align: center; margin-bottom: 2rem;">
@@ -514,6 +508,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Sidebar con información adicional
+# ----------------- INICIO DEL CÓDIGO DE LA BARRA LATERAL -----------------
 with st.sidebar:
     st.markdown("### ℹ️ Sobre Mindly")
     st.markdown("""
@@ -522,163 +517,85 @@ with st.sidebar:
     - 🎯 Técnicas de manejo emocional  
     - 🔍 Información psicológica confiable
     - 🆘 Orientación en momentos difíciles
-    
+
     **Recuerda:** En casos de emergencia, contacta servicios profesionales.
     """)
-    
-    # === HISTORIAL DE CONVERSACIONES DEL USUARIO ===
+
     st.markdown("---")
-    st.markdown("### 💭 Mis Conversaciones")
-    
-    # Mostrar sesiones guardadas del usuario
-    if user_sessions:
-        # Ordenar por fecha (más reciente primero)
-        sesiones_ordenadas = sorted(user_sessions.items(), 
-                                  key=lambda x: x[1]['timestamp'], reverse=True)
-        
-        st.markdown("**Conversaciones anteriores:**")
-        for session_id, datos in sesiones_ordenadas[:5]:  # Mostrar últimas 5
-            fecha = datetime.fromisoformat(datos['timestamp']).strftime("%d/%m %H:%M")
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                if st.button(f"📄 {datos['titulo']}", key=f"load_{session_id}", 
-                           help=f"{fecha} • {datos['mensajes']} mensajes"):
-                    st.session_state.history = datos['historia']
-                    st.session_state.current_session_id = session_id
-                    st.rerun()
-            
-            with col2:
-                if st.button("🗑️", key=f"delete_{session_id}", 
-                           help="Eliminar conversación"):
-                    eliminar_sesion_usuario(session_id)
-                    st.rerun()
-        
-        # Mostrar más conversaciones si hay
-        if len(user_sessions) > 5:
-            with st.expander(f"Ver {len(user_sessions) - 5} conversaciones más"):
-                for session_id, datos in sesiones_ordenadas[5:]:
-                    fecha = datetime.fromisoformat(datos['timestamp']).strftime("%d/%m/%y %H:%M")
-                    col1, col2 = st.columns([3, 1])
-                    
-                    with col1:
-                        if st.button(f"📄 {datos['titulo']}", key=f"load_more_{session_id}",
-                                   help=f"{fecha} • {datos['mensajes']} mensajes"):
-                            st.session_state.history = datos['historia']
-                            st.session_state.current_session_id = session_id
-                            st.rerun()
-                    
-                    with col2:
-                        if st.button("🗑️", key=f"delete_more_{session_id}"):
-                            eliminar_sesion_usuario(session_id)
-                            st.rerun()
-    else:
-        st.info("Aún no tienes conversaciones guardadas")
-    
-    # Botones de acción
+    st.markdown("### 💭 Conversación Actual")
+    st.info("Para guardar la conversación, puedes usar el botón 'Guardar'. Los logs completos se almacenan para el administrador.")
+
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🔄 Nueva Conversación"):
-            # Guardar conversación actual si tiene contenido
-            if (st.session_state.get('history') and 
-                len(st.session_state.history) > 0):
-                
-                session_id = st.session_state.get('current_session_id', generar_session_id())
+        if st.button("Nueva Conversación"):
+            if st.session_state.history and len(st.session_state.history) > 0:
+                session_id = st.session_state.get('current_session_id', str(uuid.uuid4())[:8])
                 guardar_sesion_usuario(session_id, st.session_state.history)
-            
-            # Limpiar historial actual
+
             st.session_state.history = []
-            st.session_state.current_session_id = generar_session_id()
+            st.session_state.current_session_id = str(uuid.uuid4())[:8]
             st.rerun()
-    
+
     with col2:
-        if st.button("💾 Guardar"):
-            if st.session_state.get('history') and len(st.session_state.history) > 0:
-                session_id = st.session_state.get('current_session_id', generar_session_id())
+        if st.button("Guardar"):
+            if st.session_state.history and len(st.session_state.history) > 0:
+                session_id = st.session_state.get('current_session_id', str(uuid.uuid4())[:8])
                 guardar_sesion_usuario(session_id, st.session_state.history)
-                st.success("✅ Guardado!")
+                st.success("✅ Conversación guardada!")
             else:
                 st.warning("No hay nada que guardar")
-    
-    # === GESTIÓN DE LOGS (OPCIONAL) ===
-    if GITHUB_TOKEN:  # Solo mostrar si hay token configurado
+
+    if is_admin:
         st.markdown("---")
-        st.markdown("### 📊 Gestión de Logs")
-        
-        # Mostrar estadísticas de logs
-        if chat_log:
+        st.markdown("### 📊 Panel de Administrador")
+
+        # CAMBIO #2 - Usar los datos correctos para logs de admin
+        logs_para_mostrar = st.session_state.all_sessions_log
+
+        if logs_para_mostrar:
             st.markdown(f"""
             <div class="gist-info">
-            📈 <strong>Estadísticas:</strong><br>
-            • Total conversaciones: {len(chat_log)}<br>
-            • Última actualización: {chat_log[-1]['timestamp'][:19] if chat_log else 'N/A'}
+            📈 <strong>Estadísticas actuales:</strong><br>
+            • Total de sesiones: {len(logs_para_mostrar)}
             </div>
             """, unsafe_allow_html=True)
-        
-        # Configuración de Gist
-        with st.expander("⚙️ Configurar Gist"):
-            github_token_input = st.text_input(
-                "GitHub Token", 
-                value=GITHUB_TOKEN, 
-                type="password",
-                help="Token de acceso personal de GitHub"
-            )
-            gist_id_input = st.text_input(
-                "Gist ID (opcional)", 
-                value=GIST_ID,
-                help="ID del Gist existente"
-            )
-        
-        # Botones de acción para Gist
-        gist_manager = GistManager(
-            github_token_input or GITHUB_TOKEN, 
-            gist_id_input or st.session_state.get('gist_id')
-        )
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button("☁️ Subir Logs"):
-                if chat_log:
-                    with st.spinner("Subiendo..."):
-                        success, result = gist_manager.subir_logs(chat_log)
-                        if success:
-                            st.success("✅ Logs subidos!")
-                            st.markdown(f"🔗 [Ver Gist]({result})")
-                        else:
-                            st.error(f"❌ Error: {result}")
-                else:
-                    st.warning("No hay logs.")
-        
-        with col2:
-            if st.button("📥 Descargar"):
-                if gist_manager.gist_id:
-                    with st.spinner("Descargando..."):
-                        success, result = gist_manager.obtener_gist()
-                        if success:
-                            files = result.get('files', {})
-                            if 'chat_log.json' in files:
-                                content = files['chat_log.json']['content']
-                                st.download_button(
-                                    label="💾 Descargar JSON",
-                                    data=content,
-                                    file_name=f"mindly_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                                    mime="application/json"
-                                )
-                        else:
-                            st.error(f"❌ Error: {result}")
-                else:
-                    st.warning("Necesitas Gist ID.")
 
-# Inicializar variables de sesión
-if "history" not in st.session_state:
-    st.session_state.history = []
+            if st.secrets.get("GITHUB_TOKEN"):
+                gist_manager = GistManager(
+                    st.secrets.get("GITHUB_TOKEN"),
+                    st.secrets.get("GIST_ID") or st.session_state.get('gist_id')
+                )
 
-if "gist_id" not in st.session_state:
-    st.session_state.gist_id = GIST_ID
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("Subir Logs"):
+                        with st.spinner("Subiendo logs..."):
+                            success, result = gist_manager.subir_logs(logs_para_mostrar)
+                            if success:
+                                st.success(f"✅ Logs subidos exitosamente!")
+                                st.markdown(f"🔗 [Ver en GitHub]({result})")
+                            else:
+                                st.error(f"❌ Error: {result}")
+                with col2:
+                    if st.button("Descargar"):
+                        st.download_button(
+                            label="Descargar JSON",
+                            data=json.dumps(logs_para_mostrar, ensure_ascii=False, indent=2),
+                            file_name=f"mindly_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                            mime="application/json"
+                        )
+                        st.success("✅ Descarga lista!")
+            else:
+                st.info("🔑 Configura tu GitHub Token para usar Gist.")
+        else:
+            st.info("No hay logs de usuario para mostrar.")
 
-if "current_session_id" not in st.session_state:
-    st.session_state.current_session_id = generar_session_id()
+        if st.button("Cerrar Sesión Admin"):
+            st.session_state.admin_authenticated = False
+            st.rerun()
+
+# ELIMINAR ESTA SECCIÓN - YA NO ES NECESARIA PORQUE SE MOVIÓ AL PRINCIPIO
+# Las variables ya están inicializadas arriba
 
 # Mensaje de bienvenida si no hay historial
 if len(st.session_state.history) == 0:
@@ -707,13 +624,8 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
     st.session_state.history.append({"role": "user", "content": prompt})
     
     with st.spinner("🧠 Mindly está reflexionando..."):
-        try:
-            respuesta_final = chat(prompt, st.session_state.history)
-            st.chat_message("assistant").markdown(respuesta_final)
-        except Exception as e:
-            st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
-            respuesta_final = "Lo siento, hubo un problema al procesar tu mensaje. ¿Podrías intentarlo de nuevo?"
-            st.chat_message("assistant").markdown(respuesta_final)
+        respuesta_final = chat(prompt, st.session_state.history)
+        st.chat_message("assistant").markdown(respuesta_final)
     
     st.session_state.history.append({"role": "assistant", "content": respuesta_final})
     intencion = detectar_intencion(prompt)
