@@ -10,6 +10,24 @@ ADMIN_MODE = st.query_params.get("admin") == "true"
 MAX_HISTORY = 8
 LOG_FILE = "chat_log.json"
 
+try:
+    with open(LOG_FILE, "r", encoding="utf-8") as f:
+        chat_log = json.load(f)
+except FileNotFoundError:
+    chat_log = []
+    
+    if 'history' not in st.session_state:
+    st.session_state.history = []
+    
+    if "gist_id" not in st.session_state:
+    st.session_state.gist_id = GIST_ID
+    
+    if "current_session_id" not in st.session_state:
+    st.session_state.current_session_id = str(uuid.uuid4())[:8]
+    
+    if 'all_sessions_log' not in st.session_state:
+    st.session_state.all_sessions_log = all_sessions_log
+
 MISTRAL_API_KEY = st.secrets.get("mistralapi")
 if not MISTRAL_API_KEY:
     st.error("Error: La clave 'mistralapi' no está configurada en los secretos de Streamlit.")
@@ -367,24 +385,6 @@ def load_custom_css():
     }
     </style>
     """, unsafe_allow_html=True)
-
-# ==== Cargar historial de logs ====
-try:
-    with open(LOG_FILE, "r", encoding="utf-8") as f:
-        chat_log = json.load(f)
-except FileNotFoundError:
-    chat_log = []
-
-# ===== INICIALIZACIÓN DE VARIABLES DE SESIÓN (CAMBIO #1) =====
-# MOVER AQUÍ - AL PRINCIPIO, DESPUÉS DE CARGAR LOS ARCHIVOS
-if 'history' not in st.session_state:
-    st.session_state.history = []
-
-if "gist_id" not in st.session_state:
-    st.session_state.gist_id = GIST_ID
-
-if "current_session_id" not in st.session_state:
-    st.session_state.current_session_id = str(uuid.uuid4())[:8]
 
 # ==== Funciones para historial de usuario ====
 def generar_session_id():
