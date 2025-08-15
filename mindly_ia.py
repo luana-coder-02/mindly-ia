@@ -10,9 +10,15 @@ ADMIN_MODE = st.query_params.get("admin") == "true"
 MAX_HISTORY = 8
 LOG_FILE = "chat_log.json"
 
-# === LÓGICA DE CARGA DE LOGS Y DE INICIALIZACIÓN DE VARIABLES DE SESIÓN (CORREGIDA) ===
+MISTRAL_API_KEY = st.secrets.get("mistralapi")
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
+GIST_ID = st.secrets.get("GIST_ID", "")
+GIST_FILENAME = "chat_log.json"
 
-# Intentar cargar los logs. Si el archivo no existe, se crea un diccionario vacío.
+if not MISTRAL_API_KEY:
+    st.error("Error: La clave 'mistralapi' no está configurada en los secretos de Streamlit.")
+    st.stop()
+
 try:
     with open(LOG_FILE, "r", encoding="utf-8") as f:
         all_sessions_log = json.load(f)
@@ -32,17 +38,6 @@ if "current_session_id" not in st.session_state:
 
 if 'all_sessions_log' not in st.session_state:
     st.session_state.all_sessions_log = all_sessions_log
-
-# === FIN DEL BLOQUE DE INICIALIZACIÓN ===
-
-MISTRAL_API_KEY = st.secrets.get("mistralapi")
-if not MISTRAL_API_KEY:
-    st.error("Error: La clave 'mistralapi' no está configurada en los secretos de Streamlit.")
-    st.stop()
-
-GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
-GIST_ID = st.secrets.get("GIST_ID", "")
-GIST_FILENAME = "chat_log.json"
 
 # Aquí el resto del código es el mismo, solo lo muestro para completar el archivo
 class GistManager:
