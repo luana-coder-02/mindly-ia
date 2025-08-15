@@ -18,15 +18,19 @@ GIST_FILENAME = "chat_log.json"
 if not MISTRAL_API_KEY:
     st.error("Error: La clave 'mistralapi' no está configurada en los secretos de Streamlit.")
     st.stop()
-    
-    try:
-        with open(LOG_FILE, "r", encoding="utf-8") as f:
-            all_sessions_log = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        all_sessions_log = {}
 
-# Inicialización de todas las variables de sesión
-# Esto debe estar fuera del bloque 'try-except' para que siempre se ejecute.
+# Initialize all_sessions_log to an empty dictionary. This ensures the variable always exists.
+all_sessions_log = {}
+
+# Load logs from a file. If the file doesn't exist or is invalid, the empty dictionary from above will be used.
+try:
+    with open(LOG_FILE, "r", encoding="utf-8") as f:
+        all_sessions_log = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    pass # The variable is already initialized to an empty dictionary, so we can pass.
+
+# Initialize all session state variables.
+# This part of the code is executed every time the app runs, ensuring that these variables are always defined.
 if 'history' not in st.session_state:
     st.session_state.history = []
 
