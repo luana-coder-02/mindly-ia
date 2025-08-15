@@ -17,16 +17,16 @@ except FileNotFoundError:
     chat_log = []
     
     if 'history' not in st.session_state:
-    st.session_state.history = []
+        st.session_state.history = []
     
     if "gist_id" not in st.session_state:
-    st.session_state.gist_id = GIST_ID
+        st.session_state.gist_id = GIST_ID
     
     if "current_session_id" not in st.session_state:
-    st.session_state.current_session_id = str(uuid.uuid4())[:8]
+        st.session_state.current_session_id = str(uuid.uuid4())[:8]
     
     if 'all_sessions_log' not in st.session_state:
-    st.session_state.all_sessions_log = all_sessions_log
+        st.session_state.all_sessions_log = all_sessions_log
 
 MISTRAL_API_KEY = st.secrets.get("mistralapi")
 if not MISTRAL_API_KEY:
