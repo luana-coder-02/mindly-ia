@@ -1,7 +1,4 @@
 ## 🧠 Mindly, Asistente de Bienestar Mental
-## 🚀 ¡Pruébalo Ahora Mismo!
-Mindly está desplegado y totalmente funcional. Puedes interactuar con el chatbot directamente en el siguiente enlace:
-[Mindly](https://mindly-ia.streamlit.app/)
 ### 🎯 Resumen del proyecto:
 **Mindly** es un chatbot de apoyo psicológico diseñado con **Python** y **Streamlit**. Este proyecto demuestra mi capacidad para integrar **modelos de lenguaje grandes (LLMs)**, específicamente el modelo **Mistral**, para crear una aplicación funcional y con una interfaz de usuario atractiva y lista para producción.
 
@@ -33,4 +30,4 @@ Si tienes preguntas sobre el proyecto, te interesa mi trabajo o quieres hablar s
 
 [LinkedIn](https://www.linkedin.com/in/luana-genes-b55595337)
 
-**Email**: genesluana275@gmail.com
+**Email**: luanagenes275@gmail.com
