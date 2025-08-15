@@ -400,15 +400,6 @@ def cargar_sesion_usuario(session_id):
     """Carga una sesión específica del usuario"""
     return user_sessions.get(session_id, {}).get("historia", [])
 
-def eliminar_sesion_usuario(session_id):
-    """Elimina una sesión del usuario"""
-    if session_id in user_sessions:
-        del user_sessions[session_id]
-        with open(USER_SESSIONS_FILE, "w", encoding="utf-8") as f:
-            json.dump(user_sessions, f, ensure_ascii=False, indent=2)
-        # Sincronizar con session_state
-        st.session_state.all_sessions_log = user_sessions.copy()
-
 # ==== Funciones del chatbot ====
 def detectar_intencion(mensaje):
     mensaje = mensaje.lower()
