@@ -386,10 +386,6 @@ if "gist_id" not in st.session_state:
 if "current_session_id" not in st.session_state:
     st.session_state.current_session_id = str(uuid.uuid4())[:8]
 
-# CAMBIO #4 - Inicializar all_sessions_log con datos existentes
-if 'all_sessions_log' not in st.session_state:
-    st.session_state.all_sessions_log = user_sessions.copy()
-
 # ==== Funciones para historial de usuario ====
 def generar_session_id():
     """Genera un ID único para la sesión"""
