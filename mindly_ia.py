@@ -20,10 +20,10 @@ if not MISTRAL_API_KEY:
     st.stop()
     
     try:
-    with open(LOG_FILE, "r", encoding="utf-8") as f:
-        all_sessions_log = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    all_sessions_log = {}
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            all_sessions_log = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        all_sessions_log = {}
 
 # Inicialización de todas las variables de sesión
 # Esto debe estar fuera del bloque 'try-except' para que siempre se ejecute.
