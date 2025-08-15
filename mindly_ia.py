@@ -18,8 +18,8 @@ GIST_FILENAME = "chat_log.json"
 if not MISTRAL_API_KEY:
     st.error("Error: La clave 'mistralapi' no está configurada en los secretos de Streamlit.")
     st.stop()
-
-try:
+    
+    try:
     with open(LOG_FILE, "r", encoding="utf-8") as f:
         all_sessions_log = json.load(f)
 except (FileNotFoundError, json.JSONDecodeError):
