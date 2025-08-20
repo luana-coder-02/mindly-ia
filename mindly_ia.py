@@ -357,8 +357,7 @@ system_messages = {
 
 @st.cache_data(show_spinner=False)
 def chat(message, history, profile):
-    system_message = SYSTEM_MESSAGES.get(profile, SYSTEM_MESSAGES["Adultos"])
-    
+    system_message = system_messages.get(profile, system_messages["Adultos"])
     messages = [{"role": "system", "content": system_message.strip()}]
     messages.extend(history[-MAX_HISTORY*2:])
     messages.append({"role": "user", "content": message})
