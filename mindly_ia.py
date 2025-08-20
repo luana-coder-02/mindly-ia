@@ -4,7 +4,8 @@ import re
 import requests
 import uuid
 from datetime import datetime
-from functools import lru_cache.
+from functools import lru_cache
+from streamlit_extras.clipboard import copy_to_clipboard
 
 # --- 1. Configuración inicial y variables globales ---
 ADMIN_MODE = st.query_params.get("admin") == "true"
@@ -466,13 +467,17 @@ def main():
             """)
 
     # Mostrar historial de conversación
-    for i in range(0, len(st.session_state.history), 2):
-        st.chat_message("user", avatar="👤").markdown(st.session_state.history[i]["content"])
-        if i+1 < len(st.session_state.history):
-            assistant_message = st.session_state.history[i+1]["content"]
-            st.chat_message("assistant", avatar="🧠").markdown(assistant_message)
-            st.text_input("Copiar al portapapeles:", assistant_message, label_visibility="collapsed")
-
+for i in range(0, len(st.session_state.history), 2):
+    st.chat_message("user").markdown(st.session_state.history[i]["content"])
+    if i+1 < len(st.session_state.history):
+        assistant_message = st.session_state.history[i+1]["content"]
+        
+        with st.container():
+            st.chat_message("assistant").markdown(assistant_message)
+            
+            col1, col2 = st.columns([0.8, 0.2]) # Ajusta el ancho de las columnas
+            with col2:
+                copy_to_clipboard(assistant_message, "📄 Copiar")
 
     # Input del usuario
 if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
