@@ -332,6 +332,7 @@ def detectar_intencion(mensaje):
     else:
         return "intencion_desconocida"
 
+# Definir los mensajes del sistema
 system_messages = {
     "Adultos": """
         Eres Mindly, un chatbot empático y profesional, experto en ayudar a adultos a encontrar información clara sobre psicología.
@@ -354,8 +355,8 @@ system_messages = {
     """
 }
 
-@st.cache_data(show_spinner=False)
 def chat(message, history, profile):
+    """Función de chat SIN cache para evitar problemas con argumentos mutables"""
     system_message = system_messages.get(profile, system_messages["Adultos"])
     
     messages = [{"role": "system", "content": system_message.strip()}]
@@ -383,6 +384,10 @@ def chat(message, history, profile):
         
         respuesta_final = response_data.get("choices", [{}])[0].get("message", {}).get("content", "")
         
+        if not respuesta_final:
+            return "Lo siento, no pude generar una respuesta en este momento. Por favor, intenta de nuevo."
+        
+        # Limpiar formato de respuesta
         respuesta_final = re.sub(r'^\s*#+\s*(.+)', r'**\1**', respuesta_final, flags=re.MULTILINE)
         respuesta_final = re.sub(r'\n{2,}', '\n\n', respuesta_final)
         respuesta_final = re.sub(r'\n\s*?([•*])\s?', '\n- ', respuesta_final)
@@ -393,7 +398,13 @@ def chat(message, history, profile):
 
     except requests.exceptions.RequestException as e:
         st.error(f"Error al conectar con la API de Mistral: {e}")
-        return "Lo siento, no puedo responder en este momento."
+        return "Lo siento, no puedo responder en este momento debido a un problema de conexión."
+    except (KeyError, IndexError) as e:
+        st.error(f"Error al procesar la respuesta: {e}")
+        return "Lo siento, hubo un problema procesando la respuesta. Por favor, intenta de nuevo."
+    except Exception as e:
+        st.error(f"Error inesperado: {e}")
+        return "Lo siento, ocurrió un error inesperado. Por favor, intenta de nuevo."
 
 # ==== Interfaz en Streamlit ====
 st.set_page_config(
@@ -533,7 +544,7 @@ for i in range(0, len(st.session_state.history), 2):
 # Input del usuario
 if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
     
-    # 1. Validación de entrada del usuario (Mensaje vacío o solo espacios)
+    # 1. Validación de entrada del usuario
     if not prompt or not prompt.strip():
         st.warning("Por favor, ingresa un mensaje válido para continuar.")
         st.stop()
@@ -548,23 +559,20 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
     st.chat_message("user", avatar="👤").markdown(prompt)
     st.session_state.history.append({"role": "user", "content": prompt})
 
-    # 2. Muestra un mensaje de estado detallado mientras se genera la respuesta
-    with st.status("🧠 **Mindly está reflexionando...**", expanded=True) as status:
-        status.update(label="✨ Analizando tu mensaje...")
-        
-        # 3. Llama a la función 'chat' con todos los argumentos requeridos
+    # 2. Genera la respuesta con spinner
+    with st.spinner("🧠 Mindly está reflexionando..."):
         respuesta_final = chat(prompt_to_api, st.session_state.history, st.session_state.current_profile)
-        
-        status.update(label="✅ Respuesta generada. ¡Listo!", state="complete", expanded=False)
 
-    # 4. Muestra la respuesta del asistente
+    # 3. Muestra la respuesta del asistente
     if respuesta_final and respuesta_final.strip():
         st.chat_message("assistant", avatar="🧠").markdown(respuesta_final)
+        st.session_state.history.append({"role": "assistant", "content": respuesta_final})
     else:
-        st.chat_message("assistant", avatar="🧠").markdown("Lo siento, tuve un problema técnico y no pude generar una respuesta. Por favor, intenta de nuevo.")
-        
-    st.session_state.history.append({"role": "assistant", "content": respuesta_final if respuesta_final else "Error: No se pudo generar una respuesta."})
+        error_msg = "Lo siento, tuve un problema técnico y no pude generar una respuesta. Por favor, intenta de nuevo."
+        st.chat_message("assistant", avatar="🧠").markdown(error_msg)
+        st.session_state.history.append({"role": "assistant", "content": error_msg})
     
-    # Guarda la conversación
+    # 4. Detecta intención y guarda la conversación
+    intencion = detectar_intencion(prompt)
     session_id = st.session_state.get('current_session_id', generar_session_id())
     guardar_sesion_usuario(session_id, st.session_state.history)
