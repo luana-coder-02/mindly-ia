@@ -333,8 +333,6 @@ def chat(message, history, profile):
         st.error("Error al procesar la respuesta de la API de Mistral.")
         return ""
 
-
-# --- 3. Función principal de la aplicación ---
 def main():
     if 'history' not in st.session_state:
         st.session_state.history = []
@@ -466,59 +464,59 @@ def main():
             ¿En qué puedo ayudarte hoy?
             """)
 
-for i in range(0, len(st.session_state.history), 2):
-    st.chat_message("user").markdown(st.session_state.history[i]["content"])
+    # Mostrar historial de conversación
+    for i in range(0, len(st.session_state.history), 2):
+        st.chat_message("user").markdown(st.session_state.history[i]["content"])
 
-    if i + 1 < len(st.session_state.history):
-        assistant_message = st.session_state.history[i + 1]["content"]
+        if i + 1 < len(st.session_state.history):
+            assistant_message = st.session_state.history[i + 1]["content"]
 
-        with st.container():
-            st.chat_message("assistant").markdown(assistant_message)
+            with st.container():
+                st.chat_message("assistant").markdown(assistant_message)
 
-            col1, col2 = st.columns([0.8, 0.2])
-            with col2:
-                safe_message = html.escape(assistant_message)
-                st.markdown(f"""
-                    <script>
-                    function copiarTexto() {{
-                        navigator.clipboard.writeText(`{safe_message}`);
-                        alert("✅ Texto copiado al portapapeles");
-                    }}
-                    </script>
-                    <button onclick="copiarTexto()"
-                            style="background-color:#6B73FF;color:white;border:none;padding:6px 12px;
-                                   font-size:14px;border-radius:6px;cursor:pointer;">
-                        📋 Copiar
-                    </button>
-                """, unsafe_allow_html=True)
-                
+                col1, col2 = st.columns([0.8, 0.2])
+                with col2:
+                    safe_message = html.escape(assistant_message)
+                    st.markdown(f"""
+                        <script>
+                        function copiarTexto() {{
+                            navigator.clipboard.writeText(`{safe_message}`);
+                            alert("✅ Texto copiado al portapapeles");
+                        }}
+                        </script>
+                        <button onclick="copiarTexto()"
+                                style="background-color:#6B73FF;color:white;border:none;padding:6px 12px;
+                                       font-size:14px;border-radius:6px;cursor:pointer;">
+                            📋 Copiar
+                        </button>
+                    """, unsafe_allow_html=True)
+
     # Input del usuario
-if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
-    if not prompt or not prompt.strip():
-        st.warning("Por favor, ingresa un mensaje válido para continuar.")
-        st.stop()
+    if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
+        if not prompt or not prompt.strip():
+            st.warning("Por favor, ingresa un mensaje válido para continuar.")
+            st.stop()
 
-    prompt_to_api = prompt
-    if len(prompt_to_api) > MAX_PROMPT_LENGTH:
-        prompt_to_api = prompt_to_api[:MAX_PROMPT_LENGTH]
-        st.warning(f"Tu mensaje ha sido acortado a {MAX_PROMPT_LENGTH} caracteres para optimizar la conversación.")
-        
+        prompt_to_api = prompt
+        if len(prompt_to_api) > MAX_PROMPT_LENGTH:
+            prompt_to_api = prompt_to_api[:MAX_PROMPT_LENGTH]
+            st.warning(f"Tu mensaje ha sido acortado a {MAX_PROMPT_LENGTH} caracteres para optimizar la conversación.")
+
         st.chat_message("user").markdown(prompt)
         st.session_state.history.append({"role": "user", "content": prompt})
 
-    # Lógica de caché condicional
-    if len(prompt_to_api.strip()) < 100:
-        with st.spinner("¡Mindly responde desde la memoria! 🚀"):
-            respuesta_final = get_cached_response(prompt_to_api, st.session_state.current_profile)
-    else:
-        with st.spinner("🧠 Mindly está reflexionando..."):
-            respuesta_final = chat(prompt_to_api, st.session_state.history, st.session_state.current_profile)
+        if len(prompt_to_api.strip()) < 100:
+            with st.spinner("¡Mindly responde desde la memoria! 🚀"):
+                respuesta_final = get_cached_response(prompt_to_api, st.session_state.current_profile)
+        else:
+            with st.spinner("🧠 Mindly está reflexionando..."):
+                respuesta_final = chat(prompt_to_api, st.session_state.history, st.session_state.current_profile)
 
-    st.chat_message("assistant").markdown(respuesta_final)
-    st.session_state.history.append({"role": "assistant", "content": respuesta_final})
+        st.chat_message("assistant").markdown(respuesta_final)
+        st.session_state.history.append({"role": "assistant", "content": respuesta_final})
 
-    session_id = st.session_state.get('current_session_id', generar_session_id())
-    guardar_sesion_usuario(session_id, st.session_state.history)
+        session_id = st.session_state.get('current_session_id', generar_session_id())
+        guardar_sesion_usuario(session_id, st.session_state.history)
 
 if __name__ == "__main__":
     main()
