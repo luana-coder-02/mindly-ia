@@ -126,7 +126,174 @@ def verificar_admin():
 def load_custom_css():
     st.markdown("""
     <style>
-    /* ... (tu CSS personalizado) ... */
+    /* Importar fuentes de Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap');
+    
+    /* Variables CSS para colores de psicología */
+    :root {
+        --primary-color: #6B73FF;
+        --secondary-color: #9B59B6;
+        --accent-color: #3498DB;
+        --background-soft: #F8F9FF;
+        --text-primary: #2C3E50;
+        --text-secondary: #5A6C7D;
+        --success-color: #27AE60;
+        --warning-color: #F39C12;
+        --gentle-purple: #E8E4F3;
+        --gentle-blue: #E3F2FD;
+    }
+    
+    /* Fondo principal con gradiente suave */
+    [data-testid="stAppViewContainer"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background-attachment: fixed;
+    }
+    
+    /* Contenedor principal */
+    .block-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-top: 2rem;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Título principal */
+    h1 {
+        font-family: 'Poppins', sans-serif;
+        color: var(--primary-color);
+        text-align: center;
+        font-weight: 600;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Subtítulo */
+    .subtitle {
+        font-family: 'Inter', sans-serif;
+        color: var(--text-secondary);
+        text-align: center;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        font-weight: 300;
+    }
+    
+    /* Mensajes del chat */
+    [data-testid="stChatMessage"] {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 15px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        font-family: 'Inter', sans-serif;
+        border-left: 4px solid transparent;
+    }
+    
+    /* Mensajes del usuario */
+    [data-testid="stUserChatMessage"] {
+        background: linear-gradient(135deg, var(--gentle-blue) 0%, #E1F5FE 100%);
+        border-left-color: var(--accent-color);
+    }
+    
+    /* Mensajes del asistente */
+    [data-testid="stChatMessage"] {
+        background: linear-gradient(135deg, var(--gentle-purple) 0%, #F3E5F5 100%);
+        border-left-color: var(--secondary-color);
+    }
+    
+    /* Input del chat */
+    [data-testid="stChatInput"] {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 25px;
+        padding: 0.5rem;
+        margin-top: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(107, 115, 255, 0.3);
+    }
+    
+    [data-testid="stChatInput"]:focus-within {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 20px rgba(107, 115, 255, 0.3);
+    }
+    
+    /* Spinner personalizado */
+    [data-testid="stSpinner"] {
+        color: var(--primary-color);
+    }
+    
+    /* Botones */
+    .stButton > button {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.5rem 1.5rem;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(107, 115, 255, 0.4);
+    }
+    
+    /* Sidebar personalizada */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, var(--gentle-purple) 0%, white 100%);
+    }
+    
+    /* Texto general */
+    .stMarkdown {
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+        line-height: 1.6;
+    }
+    
+    /* Efectos de hover suaves */
+    .stChatMessage:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+    }
+    
+    /* Animación de entrada */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .main {
+        animation: fadeInUp 0.8s ease-out;
+    }
+    
+    /* Scrollbar personalizada */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-color);
+    }
     </style>
     """, unsafe_allow_html=True)
 
