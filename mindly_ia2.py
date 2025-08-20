@@ -1,78 +1,24 @@
 import streamlit as st
-import uuid
-import requests
-import re
+from huggingface_hub import InferenceClient
 
-MISTRAL_API_KEY = st.secrets.get("mindly_ia2")
+# Cargar la API Key desde secretos
+HF_TOKEN = st.secrets.get("hf_token")
 
-# Diccionario de perfiles con system prompts breves
-system_messages = {
-    "Adultos": "Eres un asistente empático que brinda apoyo emocional a adultos.",
-    "Adolescentes": "Eres un compañero comprensivo para adolescentes que buscan orientación.",
-    "Niños": "Eres un amigo amable que ayuda a los niños a entender sus emociones."
-}
+# Inicializar cliente de Hugging Face
+client = InferenceClient("HuggingFaceH4/zephyr-7b-beta", token=HF_TOKEN)
 
-# Función que llama a la API de Mistral
-def chat(prompt, history, perfil):
-    system_prompt = system_messages.get(perfil, "Eres un asistente empático.")
-    trimmed_history = history[-6:]  # últimos 3 pares de mensajes
+# Interfaz de Mindly
+st.title("🧠 Mindly - Tu espacio de escucha empática")
 
-    messages = [{"role": "system", "content": system_prompt}]
-    messages.extend(trimmed_history)
-    messages.append({"role": "user", "content": prompt})
+user_input = st.text_area("¿Cómo te sentís hoy?", placeholder="Podés contarme lo que quieras...")
 
-    payload = {
-        "model": "mistral-7b-instruct",
-        "messages": messages,
-        "temperature": 0.7,
-        "max_tokens": 512
-    }
-
-    headers = {
-        "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
-        "Content-Type": "application/json"
-    }
-
-    try:
-        response = requests.post("https://api.mistral.ai/v1/chat/completions", json=payload, headers=headers)
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
-    except Exception as e:
-        return "😕 Ups, hubo un problema al generar la respuesta. Intentá de nuevo más tarde."
-
-# Función principal
-def main():
-    st.set_page_config(page_title="Mindly", page_icon="🧠", layout="centered")
-
-    if "history" not in st.session_state:
-        st.session_state.history = []
-    if "current_profile" not in st.session_state:
-        st.session_state.current_profile = "Adultos"
-
-    st.title("🧠 Mindly")
-    st.markdown("Tu compañero de bienestar mental. Conversaciones empáticas y apoyo emocional.")
-
-    st.selectbox("Elegí tu perfil:", options=list(system_messages.keys()), key="current_profile")
-
-    if st.button("🗑️ Nueva conversación"):
-        st.session_state.history = []
-
-    if len(st.session_state.history) == 0:
-        st.chat_message("assistant").markdown("¡Hola! ¿En qué puedo ayudarte hoy?")
-
-    for i in range(0, len(st.session_state.history), 2):
-        st.chat_message("user").markdown(st.session_state.history[i]["content"])
-        if i + 1 < len(st.session_state.history):
-            st.chat_message("assistant").markdown(st.session_state.history[i + 1]["content"])
-
-    if prompt := st.chat_input("💬 Escribí lo que estás pensando..."):
-        st.session_state.history.append({"role": "user", "content": prompt})
-
-        with st.spinner("🧠 Mindly está reflexionando..."):
-            respuesta = chat(prompt, st.session_state.history, st.session_state.current_profile)
-
-        st.session_state.history.append({"role": "assistant", "content": respuesta})
-        st.chat_message("assistant").markdown(respuesta)
-
-if __name__ == "__main__":
-    main()
+if st.button("Hablar con Mindly") and user_input:
+    with st.spinner("Mindly está pensando con cariño..."):
+        response = client.text_generation(
+            prompt=f"<|system|>Eres un asistente cálido y empático llamado Mindly.<|user|>{user_input}<|assistant|>",
+            max_new_tokens=300,
+            temperature=0.7,
+            top_p=0.95
+        )
+        st.markdown("### 🌟 Mindly responde:")
+        st.write(response)
