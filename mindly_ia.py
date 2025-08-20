@@ -332,7 +332,6 @@ def detectar_intencion(mensaje):
     else:
         return "intencion_desconocida"
 
-# Definir los mensajes del sistema fuera de la función chat
 system_messages = {
     "Adultos": """
         Eres Mindly, un chatbot empático y profesional, experto en ayudar a adultos a encontrar información clara sobre psicología.
@@ -357,10 +356,8 @@ system_messages = {
 
 @st.cache_data(show_spinner=False)
 def chat(message, history, profile):
-    # Obtiene el mensaje del sistema según el perfil
     system_message = system_messages.get(profile, system_messages["Adultos"])
     
-    # Construye el historial de mensajes para la API
     messages = [{"role": "system", "content": system_message.strip()}]
     messages.extend(history[-MAX_HISTORY*2:])  # Últimos mensajes
     messages.append({"role": "user", "content": message})
@@ -384,10 +381,8 @@ def chat(message, history, profile):
         response.raise_for_status()
         response_data = response.json()
         
-        # Manejo seguro si la API cambia el formato
         respuesta_final = response_data.get("choices", [{}])[0].get("message", {}).get("content", "")
         
-        # Formateo del Markdown
         respuesta_final = re.sub(r'^\s*#+\s*(.+)', r'**\1**', respuesta_final, flags=re.MULTILINE)
         respuesta_final = re.sub(r'\n{2,}', '\n\n', respuesta_final)
         respuesta_final = re.sub(r'\n\s*?([•*])\s?', '\n- ', respuesta_final)
