@@ -503,9 +503,9 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
     if len(prompt_to_api) > MAX_PROMPT_LENGTH:
         prompt_to_api = prompt_to_api[:MAX_PROMPT_LENGTH]
         st.warning(f"Tu mensaje ha sido acortado a {MAX_PROMPT_LENGTH} caracteres para optimizar la conversación.")
-
-    st.chat_message("user").markdown(prompt)
-    st.session_state.history.append({"role": "user", "content": prompt})
+        
+        st.chat_message("user").markdown(prompt)
+        st.session_state.history.append({"role": "user", "content": prompt})
 
     # Lógica de caché condicional
     if len(prompt_to_api.strip()) < 100:
