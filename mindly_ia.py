@@ -465,18 +465,17 @@ def main():
             
             ¿En qué puedo ayudarte hoy?
             """)
-            
-            for i in range(0, len(st.session_state.history), 2):
-                st.chat_message("user").markdown(st.session_state.history[i]["content"])
-                
-                if i + 1 < len(st.session_state.history):
-                    assistant_message = st.session_state.history[i + 1]["content"]
-                    
-                    with st.container():
-                        st.chat_message("assistant").markdown(assistant_message)
-            
-            col1, col2 = st.columns([0.8, 0.2])  # Ajusta el ancho de las columnas
-            
+
+for i in range(0, len(st.session_state.history), 2):
+    st.chat_message("user").markdown(st.session_state.history[i]["content"])
+
+    if i + 1 < len(st.session_state.history):
+        assistant_message = st.session_state.history[i + 1]["content"]
+
+        with st.container():
+            st.chat_message("assistant").markdown(assistant_message)
+
+            col1, col2 = st.columns([0.8, 0.2])
             with col2:
                 safe_message = html.escape(assistant_message)
                 st.markdown(f"""
