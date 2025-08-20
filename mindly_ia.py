@@ -4,6 +4,7 @@ import re
 import requests
 import uuid
 from datetime import datetime
+from functools import lru_cache.
 
 # --- 1. Configuración inicial y variables globales ---
 ADMIN_MODE = st.query_params.get("admin") == "true"
@@ -257,6 +258,22 @@ def detectar_intencion(mensaje):
     else:
         return "intencion_desconocida"
 
+def clean_markdown(text: str) -> str:
+    """Limpieza exhaustiva de Markdown"""
+    text = re.sub(r'\n{2,}', '\n\n', text)  # Espacios entre párrafos
+    text = re.sub(r'^\s*#+\s*(.+)', r'**\1**', text, flags=re.MULTILINE)  # Encabezados a negrita
+    text = re.sub(r'^\s*?([•o*\-✓✔✔✅])\s?(.+)', r'- \2', text, flags=re.MULTILINE)  # Listas uniformes
+    text = re.sub(r'([a-zA-ZáéíóúÁÉÍÓÚñÑ])\*\s?([a-zA-ZáéíóúÁÉÍÓÚñÑ])', r'\1\2', text) # Eliminar asteriscos en medio de palabras
+    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)  # Eliminar enlaces
+    text = re.sub(r'`{3}.*?`{3}', '', text, flags=re.DOTALL)  # Eliminar bloques código
+    return text.strip()
+
+@lru_cache(maxsize=100)
+def get_cached_response(prompt: str, profile: str) -> str:
+    """Cache para preguntas frecuentes"""
+    # La función chat se llama con un historial vacío para que el prompt sea la única clave de caché
+    return chat(prompt, [], profile)
+
 system_messages = {
     "Adultos": """
         Eres Mindly, un chatbot empático y profesional, experto en ayudar a adultos a encontrar información clara sobre psicología.
@@ -282,11 +299,10 @@ system_messages = {
 @st.cache_data(show_spinner=False)
 def chat(message, history, profile):
     system_message = system_messages.get(profile, system_messages["Adultos"])
-    
     messages = [{"role": "system", "content": system_message.strip()}]
     messages.extend(history[-MAX_HISTORY*2:])
     messages.append({"role": "user", "content": message})
-    
+
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {MISTRAL_API_KEY}"
@@ -295,7 +311,7 @@ def chat(message, history, profile):
         "model": "mistral-large-latest",
         "messages": messages
     }
-    
+
     try:
         response = requests.post(
             "https://api.mistral.ai/v1/chat/completions",
@@ -305,14 +321,8 @@ def chat(message, history, profile):
         response.raise_for_status()
         response_data = response.json()
         respuesta_final = response_data["choices"][0]["message"]["content"]
-        
-        respuesta_final = re.sub(r'^\s*#+\s*(.+)', r'**\1**', respuesta_final, flags=re.MULTILINE)
-        respuesta_final = re.sub(r'\n{2,}', '\n\n', respuesta_final)
-        respuesta_final = re.sub(r'\n\s*?([•*])\s?', '\n- ', respuesta_final)
-        respuesta_final = re.sub(r'\n\s*?([o])\s?', '\n  - ', respuesta_final)
-        respuesta_final = respuesta_final.strip()
-        
-        return respuesta_final
+
+        return clean_markdown(respuesta_final)
 
     except requests.exceptions.RequestException as e:
         st.error(f"Error al conectar con la API de Mistral: {e}")
@@ -320,6 +330,7 @@ def chat(message, history, profile):
     except KeyError:
         st.error("Error al procesar la respuesta de la API de Mistral.")
         return ""
+
 
 # --- 3. Función principal de la aplicación ---
 def main():
@@ -464,32 +475,32 @@ def main():
 
 
     # Input del usuario
-    if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
-        if not prompt or not prompt.strip():
-            st.warning("Por favor, ingresa un mensaje válido para continuar.")
-            st.stop()
-        
-        prompt_to_api = prompt
-        if len(prompt_to_api) > MAX_PROMPT_LENGTH:
-            prompt_to_api = prompt_to_api[:MAX_PROMPT_LENGTH]
-            st.warning(f"Tu mensaje ha sido acortado a {MAX_PROMPT_LENGTH} caracteres para optimizar la conversación.")
+if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
+    if not prompt or not prompt.strip():
+        st.warning("Por favor, ingresa un mensaje válido para continuar.")
+        st.stop()
 
-        st.chat_message("user", avatar="👤").markdown(prompt)
-        st.session_state.history.append({"role": "user", "content": prompt})
-        with st.status("🧠 **Mindly está reflexionando...**", expanded=True) as status:
-            status.update(label="✨ Analizando tu mensaje...")
+    prompt_to_api = prompt
+    if len(prompt_to_api) > MAX_PROMPT_LENGTH:
+        prompt_to_api = prompt_to_api[:MAX_PROMPT_LENGTH]
+        st.warning(f"Tu mensaje ha sido acortado a {MAX_PROMPT_LENGTH} caracteres para optimizar la conversación.")
+
+    st.chat_message("user").markdown(prompt)
+    st.session_state.history.append({"role": "user", "content": prompt})
+
+    # Lógica de caché condicional
+    if len(prompt_to_api.strip()) < 100:
+        with st.spinner("¡Mindly responde desde la memoria! 🚀"):
+            respuesta_final = get_cached_response(prompt_to_api, st.session_state.current_profile)
+    else:
+        with st.spinner("🧠 Mindly está reflexionando..."):
             respuesta_final = chat(prompt_to_api, st.session_state.history, st.session_state.current_profile)
-            status.update(label="✅ Respuesta generada. ¡Listo!", state="complete", expanded=False)
 
-        if respuesta_final and respuesta_final.strip():
-            st.chat_message("assistant", avatar="🧠").markdown(respuesta_final)
-        else:
-            st.chat_message("assistant", avatar="🧠").markdown("Lo siento, tuve un problema técnico y no pude generar una respuesta. Por favor, intenta de nuevo.")
-        
-        st.session_state.history.append({"role": "assistant", "content": respuesta_final if respuesta_final else "Error: No se pudo generar una respuesta."})
-        
-        session_id = st.session_state.get('current_session_id', generar_session_id())
-        guardar_sesion_usuario(session_id, st.session_state.history)
+    st.chat_message("assistant").markdown(respuesta_final)
+    st.session_state.history.append({"role": "assistant", "content": respuesta_final})
+
+    session_id = st.session_state.get('current_session_id', generar_session_id())
+    guardar_sesion_usuario(session_id, st.session_state.history)
 
 if __name__ == "__main__":
     main()
