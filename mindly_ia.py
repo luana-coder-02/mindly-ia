@@ -356,10 +356,9 @@ system_messages = {
 }
 
 @st.cache_data(show_spinner=False)
-def chat(message, history):
-    profile = st.session_state.get("current_profile", "Adultos")
-    system_message = system_messages[profile]
-
+def chat(message, history, profile):
+    system_message = SYSTEM_MESSAGES.get(profile, SYSTEM_MESSAGES["Adultos"])
+    
     messages = [{"role": "system", "content": system_message.strip()}]
     messages.extend(history[-MAX_HISTORY*2:])
     messages.append({"role": "user", "content": message})
@@ -383,18 +382,30 @@ def chat(message, history):
         response_data = response.json()
         respuesta_final = response_data["choices"][0]["message"]["content"]
         
-        # Limpiar formato de respuesta
-        respuesta_final = re.sub(r'🔹\s?', '\n- ', respuesta_final)
-        respuesta_final = re.sub(r'(\n|\s)(Fundador:|En qué se enfoca:|Ejemplo:|Técnicas:)', r'\n\n\2', respuesta_final, flags=re.IGNORECASE)
+        # 1. Convierte los encabezados Markdown (#, ##, etc.) a negrita.
+        respuesta_final = re.sub(r'^\s*#+\s*(.+)', r'**\1**', respuesta_final, flags=re.MULTILINE)
+        
+        # 2. Normaliza los saltos de línea (asegura que haya dos entre párrafos).
+        respuesta_final = re.sub(r'\n{2,}', '\n\n', respuesta_final)
+
+        # 3. Reemplaza los bullets no estándar (`•`, `*`) por un guion de lista de Markdown.
+        respuesta_final = re.sub(r'\n\s*?([•*])\s?', '\n- ', respuesta_final)
+        
+        # 4. Convierte el sub-bullet `o` en un guion de sub-lista de Markdown.
+        respuesta_final = re.sub(r'\n\s*?([o])\s?', '\n  - ', respuesta_final)
+
+        # 5. Elimina cualquier espacio extra al inicio y final.
         respuesta_final = respuesta_final.strip()
         
         return respuesta_final
+
     except requests.exceptions.RequestException as e:
         st.error(f"Error al conectar con la API de Mistral: {e}")
-        return "Lo siento, tuve un problema técnico y no puedo responder en este momento."
+        return ""
     except KeyError:
         st.error("Error al procesar la respuesta de la API de Mistral.")
-        return "Lo siento, la respuesta de la API no es válida."
+        return ""
+
 
 # ==== Interfaz en Streamlit ====
 st.set_page_config(
