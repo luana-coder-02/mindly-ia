@@ -4,7 +4,6 @@ import re
 import requests
 import uuid
 from datetime import datetime
-from mistralai.client import MistralClient
 
 ADMIN_MODE = st.query_params.get("admin") == "true"
 MAX_HISTORY = 8
@@ -20,13 +19,14 @@ if not MISTRAL_API_KEY:
     st.error("Error: La clave 'mistralapi' no está configurada en los secretos de Streamlit.")
     st.stop()
 
+# Inicializar variables de sesión
 all_sessions_log = {}
 
 try:
     with open(LOG_FILE, "r", encoding="utf-8") as f:
         all_sessions_log = json.load(f)
 except (FileNotFoundError, json.JSONDecodeError):
-    pass # The variable is already initialized to an empty dictionary, so we can pass.
+    pass # El diccionario ya está inicializado vacío
 
 if 'history' not in st.session_state:
     st.session_state.history = []
@@ -300,24 +300,24 @@ def load_custom_css():
 # ==== Funciones para historial de usuario ====
 def generar_session_id():
     """Genera un ID único para la sesión"""
-    import uuid
     return str(uuid.uuid4())[:8]
 
 def cargar_sesion_usuario(session_id):
     """Carga una sesión específica del usuario"""
-    # Esta función está incompleta en tu código original, la mantengo así
-    # pero recuerda que necesitarías una fuente de datos como `st.session_state.all_sessions_log`
     return st.session_state.all_sessions_log.get(session_id, {}).get("history", [])
 
-def guardar_sesion_usuario(session_id, st.session_state.history)
+def guardar_sesion_usuario(session_id, history):
     """Guarda la conversación de la sesión actual en el log general."""
     session_data = {
         "timestamp": datetime.now().isoformat(),
         "history": history
     }
     st.session_state.all_sessions_log[session_id] = session_data
-    with open(LOG_FILE, "w", encoding="utf-8") as f:
-        json.dump(st.session_state.all_sessions_log, f, ensure_ascii=False, indent=2)
+    try:
+        with open(LOG_FILE, "w", encoding="utf-8") as f:
+            json.dump(st.session_state.all_sessions_log, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        st.error(f"Error al guardar el archivo: {e}")
 
 def detectar_intencion(mensaje):
     mensaje = mensaje.lower()
@@ -330,11 +330,10 @@ def detectar_intencion(mensaje):
     elif re.search(r"\b(urgente|crisis|emergencia)\b", mensaje):
         return "situacion_urgente"
     else:
-        return "intencion_desconocida" 
-        
-@st.cache_data(show_spinner=False)
-def chat(message, history):
-    system_messages = {
+        return "intencion_desconocida"
+
+# Definir los mensajes del sistema fuera de la función chat
+system_messages = {
     "Adultos": """
         Eres Mindly, un chatbot empático y profesional, experto en ayudar a adultos a encontrar información clara sobre psicología.
         Responde de forma cercana y sin jerga técnica.
@@ -354,13 +353,16 @@ def chat(message, history):
         Eres Mindly, un asistente avanzado para profesionales de la psicología. Tu conocimiento es profundo y puedes ofrecer información especializada, resúmenes de teorías o técnicas de terapia.
         Utiliza siempre Markdown para dar formato a tus respuestas. Usa listas, negritas y encabezados para que la información sea clara y fácil de leer. Asegúrate de usar saltos de línea para separar las ideas.
     """
-    }
-    profile = st.session_state.get("current_profile", "Adultos")
-system_message = system_messages[profile]
+}
 
-messages = [{"role": "system", "content": system_message.strip()}]
-messages.extend(history[-MAX_HISTORY*2:])
-messages.append({"role": "user", "content": message})
+@st.cache_data(show_spinner=False)
+def chat(message, history):
+    profile = st.session_state.get("current_profile", "Adultos")
+    system_message = system_messages[profile]
+
+    messages = [{"role": "system", "content": system_message.strip()}]
+    messages.extend(history[-MAX_HISTORY*2:])
+    messages.append({"role": "user", "content": message})
     
     headers = {
         "Content-Type": "application/json",
@@ -381,6 +383,7 @@ messages.append({"role": "user", "content": message})
         response_data = response.json()
         respuesta_final = response_data["choices"][0]["message"]["content"]
         
+        # Limpiar formato de respuesta
         respuesta_final = re.sub(r'🔹\s?', '\n- ', respuesta_final)
         respuesta_final = re.sub(r'(\n|\s)(Fundador:|En qué se enfoca:|Ejemplo:|Técnicas:)', r'\n\n\2', respuesta_final, flags=re.IGNORECASE)
         respuesta_final = respuesta_final.strip()
@@ -392,7 +395,7 @@ messages.append({"role": "user", "content": message})
     except KeyError:
         st.error("Error al procesar la respuesta de la API de Mistral.")
         return "Lo siento, la respuesta de la API no es válida."
-        
+
 # ==== Interfaz en Streamlit ====
 st.set_page_config(
     page_title="Mindly - Chat de Psicología", 
@@ -419,6 +422,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# Sidebar
 with st.sidebar:
     st.markdown("### 👤 Elige tu perfil")
     st.session_state.current_profile = st.selectbox(
@@ -462,6 +466,7 @@ with st.sidebar:
             else:
                 st.warning("No hay nada que guardar")
 
+    # Panel de administrador
     if is_admin:
         st.markdown("---")
         st.markdown("### 📊 Panel de Administrador")
@@ -510,6 +515,7 @@ with st.sidebar:
             st.session_state.admin_authenticated = False
             st.rerun()
 
+# Mostrar mensaje inicial
 if len(st.session_state.history) == 0:
     with st.chat_message("assistant"):
         st.markdown("""
@@ -518,13 +524,14 @@ if len(st.session_state.history) == 0:
         ¿En qué puedo ayudarte hoy?
         """)
 
+# Mostrar historial de conversación
 for i in range(0, len(st.session_state.history), 2):
     st.chat_message("user", avatar="👤").markdown(st.session_state.history[i]["content"])
     if i+1 < len(st.session_state.history):
         assistant_message = st.session_state.history[i+1]["content"]
         st.chat_message("assistant", avatar="🧠").markdown(assistant_message)
-        st.text_input("Copiar al portapapeles:", assistant_message, label_visibility="collapsed")
 
+# Input del usuario
 if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
     st.chat_message("user").markdown(prompt)
     st.session_state.history.append({"role": "user", "content": prompt})
