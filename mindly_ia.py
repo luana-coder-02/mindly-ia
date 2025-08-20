@@ -388,10 +388,19 @@ def chat(message, history, profile):
             return "Lo siento, no pude generar una respuesta en este momento. Por favor, intenta de nuevo."
         
         # Limpiar formato de respuesta
-        respuesta_final = re.sub(r'^\s*#+\s*(.+)', r'**\1**', respuesta_final, flags=re.MULTILINE)
+        # 1. Asegura que los párrafos tengan un espacio adecuado
         respuesta_final = re.sub(r'\n{2,}', '\n\n', respuesta_final)
-        respuesta_final = re.sub(r'\n\s*?([•*])\s?', '\n- ', respuesta_final)
-        respuesta_final = re.sub(r'\n\s*?([o])\s?', '\n  - ', respuesta_final)
+        
+        # 2. Convierte todos los encabezados de Markdown a negrita (soluciona letras grandes)
+        respuesta_final = re.sub(r'^\s*#+\s*(.+)', r'**\1**', respuesta_final, flags=re.MULTILINE)
+        
+        # 3. Normaliza las listas, convirtiendo cualquier bullet no estándar (`•`, `*`, `o`, `✓`, etc.) a un guion.
+        respuesta_final = re.sub(r'^\s*?([•o*\-✓✔✔✅])\s?(.+)', r'- \2', respuesta_final, flags=re.MULTILINE)
+
+        # 4. Limpia cualquier asterisco o guion que no sea de lista y que esté en medio de una palabra.
+        respuesta_final = re.sub(r'([a-zA-ZáéíóúÁÉÍÓÚñÑ])\*\s?([a-zA-ZáéíóúÁÉÍÓÚñÑ])', r'\1\2', respuesta_final)
+
+        # 5. Limpia los espacios extra al inicio y final de la respuesta.
         respuesta_final = respuesta_final.strip()
         
         return respuesta_final
@@ -536,10 +545,11 @@ if len(st.session_state.history) == 0:
 
 # Mostrar historial de conversación
 for i in range(0, len(st.session_state.history), 2):
-    st.chat_message("user", avatar="👤").markdown(st.session_state.history[i]["content"])
+    st.chat_message("user").markdown(st.session_state.history[i]["content"])
     if i+1 < len(st.session_state.history):
         assistant_message = st.session_state.history[i+1]["content"]
-        st.chat_message("assistant", avatar="🧠").markdown(assistant_message)
+        st.chat_message("assistant").markdown(assistant_message)
+        st.text_input("Copiar al portapapeles:", assistant_message, label_visibility="collapsed")
 
 # Input del usuario
 if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
@@ -556,7 +566,7 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
         st.warning(f"Tu mensaje ha sido acortado a {MAX_PROMPT_LENGTH} caracteres para optimizar la conversación.")
 
     # Muestra el mensaje del usuario en el chat
-    st.chat_message("user", avatar="👤").markdown(prompt)
+    st.chat_message("user").markdown(prompt)
     st.session_state.history.append({"role": "user", "content": prompt})
 
     # 2. Genera la respuesta con spinner
@@ -565,11 +575,11 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
 
     # 3. Muestra la respuesta del asistente
     if respuesta_final and respuesta_final.strip():
-        st.chat_message("assistant", avatar="🧠").markdown(respuesta_final)
+        st.chat_message("assistant").markdown(respuesta_final)
         st.session_state.history.append({"role": "assistant", "content": respuesta_final})
     else:
         error_msg = "Lo siento, tuve un problema técnico y no pude generar una respuesta. Por favor, intenta de nuevo."
-        st.chat_message("assistant", avatar="🧠").markdown(error_msg)
+        st.chat_message("assistant").markdown(error_msg)
         st.session_state.history.append({"role": "assistant", "content": error_msg})
     
     # 4. Detecta intención y guarda la conversación
