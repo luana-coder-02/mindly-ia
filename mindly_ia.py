@@ -8,6 +8,7 @@ from mistralai.client import MistralClient
 
 ADMIN_MODE = st.query_params.get("admin") == "true"
 MAX_HISTORY = 8
+MAX_PROMPT_LENGTH = 1000
 LOG_FILE = "chat_log.json"
 
 MISTRAL_API_KEY = st.secrets.get("mistralapi")
@@ -19,18 +20,14 @@ if not MISTRAL_API_KEY:
     st.error("Error: La clave 'mistralapi' no está configurada en los secretos de Streamlit.")
     st.stop()
 
-# Initialize all_sessions_log to an empty dictionary. This ensures the variable always exists.
 all_sessions_log = {}
 
-# Load logs from a file. If the file doesn't exist or is invalid, the empty dictionary from above will be used.
 try:
     with open(LOG_FILE, "r", encoding="utf-8") as f:
         all_sessions_log = json.load(f)
 except (FileNotFoundError, json.JSONDecodeError):
     pass # The variable is already initialized to an empty dictionary, so we can pass.
 
-# Initialize all session state variables.
-# This part of the code is executed every time the app runs, ensuring that these variables are always defined.
 if 'history' not in st.session_state:
     st.session_state.history = []
 
@@ -43,7 +40,9 @@ if "current_session_id" not in st.session_state:
 if 'all_sessions_log' not in st.session_state:
     st.session_state.all_sessions_log = all_sessions_log
 
-# Aquí el resto del código es el mismo, solo lo muestro para completar el archivo
+if "current_profile" not in st.session_state:
+    st.session_state.current_profile = "Adultos"
+
 class GistManager:
     def __init__(self, token, gist_id=None):
         self.token = token
@@ -164,16 +163,31 @@ def detectar_intencion(mensaje):
     elif re.search(r"\b(urgente|crisis|emergencia)\b", mensaje):
         return "situacion_urgente"
     else:
-        return "intencion_desconocida"
-
+        return "intencion_desconocida" 
+        
+@st.cache_data(show_spinner=False)
 def chat(message, history):
-    system_message = """
-        Eres Mindly, un chatbot empático, accesible y profesional.
-        Tu objetivo es ayudar a los usuarios a encontrar información clara y confiable sobre psicología.
-        Responde de forma cercana, sin usar jerga técnica, y adapta tus respuestas según la intención del usuario.
+    system_message = {
+    "Adultos": """
+        Eres Mindly, un chatbot empático y profesional, experto en ayudar a adultos a encontrar información clara sobre psicología.
+        Responde de forma cercana y sin jerga técnica.
         Si notas que alguien necesita apoyo emocional urgente, sugiérele que busque ayuda profesional inmediata.
         Utiliza siempre Markdown para dar formato a tus respuestas. Usa listas, negritas y encabezados para que la información sea clara y fácil de leer. Asegúrate de usar saltos de línea para separar las ideas.
+    """,
+    "Adolescentes": """
+        Eres Mindly, un compañero de confianza para adolescentes. Hablas de forma sencilla y comprensible, ofreciendo apoyo y consejos sobre temas como el estrés escolar, la presión social y la ansiedad.
+        Si notas que alguien necesita apoyo emocional urgente, sugiérele que busque ayuda profesional inmediata.
+        Utiliza siempre Markdown para dar formato a tus respuestas. Usa listas, negritas y encabezados para que la información sea clara y fácil de leer. Asegúrate de usar saltos de línea para separar las ideas.
+    """,
+    "Padres": """
+        Eres Mindly, un asistente para padres. Proporcionas información y estrategias para entender y apoyar el desarrollo emocional de sus hijos. Tu tono es profesional y calmado.
+        Utiliza siempre Markdown para dar formato a tus respuestas. Usa listas, negritas y encabezados para que la información sea clara y fácil de leer. Asegúrate de usar saltos de línea para separar las ideas.
+    """,
+    "Profesionales": """
+        Eres Mindly, un asistente avanzado para profesionales de la psicología. Tu conocimiento es profundo y puedes ofrecer información especializada, resúmenes de teorías o técnicas de terapia.
+        Utiliza siempre Markdown para dar formato a tus respuestas. Usa listas, negritas y encabezados para que la información sea clara y fácil de leer. Asegúrate de usar saltos de línea para separar las ideas.
     """
+    }
     messages = [{"role": "system", "content": system_message.strip()}]
     messages.extend(history[-MAX_HISTORY*2:])
     messages.append({"role": "user", "content": message})
@@ -217,10 +231,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Aplicar estilos personalizados
 load_custom_css()
 
-# Verificar si es administrador
 is_admin = verificar_admin()
 
 if is_admin:
@@ -238,6 +250,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 with st.sidebar:
+    st.markdown("### 👤 Elige tu perfil")
+    st.session_state.current_profile = st.selectbox(
+        "Elige tu perfil:",
+        list(SYSTEM_MESSAGES.keys()),
+        index=list(SYSTEM_MESSAGES.keys()).index(st.session_state.current_profile),
+        label_visibility="collapsed"
+    )
     st.markdown("### ℹ️ Sobre Mindly")
     st.markdown("""
     Mindly es tu asistente de bienestar mental, diseñado para:
@@ -326,19 +345,15 @@ if len(st.session_state.history) == 0:
         st.markdown("""
         ¡Hola! Soy **Mindly**, tu compañero de bienestar mental. 🌟
         
-        Estoy aquí para ayudarte con:
-        - Manejo de emociones y estrés
-        - Técnicas de relajación y mindfulness  
-        - Información sobre psicología
-        - Apoyo en momentos difíciles
-        
         ¿En qué puedo ayudarte hoy?
         """)
 
 for i in range(0, len(st.session_state.history), 2):
-    st.chat_message("user").markdown(st.session_state.history[i]["content"])
+    st.chat_message("user", avatar="👤").markdown(st.session_state.history[i]["content"])
     if i+1 < len(st.session_state.history):
-        st.chat_message("assistant").markdown(st.session_state.history[i+1]["content"])
+        assistant_message = st.session_state.history[i+1]["content"]
+        st.chat_message("assistant", avatar="🧠").markdown(assistant_message)
+        st.text_input("Copiar al portapapeles:", assistant_message, label_visibility="collapsed")
 
 if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
     st.chat_message("user").markdown(prompt)
