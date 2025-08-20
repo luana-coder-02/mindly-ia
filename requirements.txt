@@ -1,3 +1,4 @@
 streamlit
 mistralai>=0.4.2
 requests
+streamlit-extras
