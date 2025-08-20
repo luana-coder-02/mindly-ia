@@ -94,29 +94,27 @@ def load_custom_css():
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap');
     :root {
-        --primary-color: #6B73FF;
-        --secondary-color: #9B59B6;
-        --accent-color: #3498DB;
-        --background-soft: #F8F9FF;
-        --text-primary: #2C3E50;
-        --text-secondary: #5A6C7D;
-        --success-color: #27AE60;
-        --warning-color: #F39C12;
-        --gentle-purple: #E8E4F3;
-        --gentle-blue: #E3F2FD;
+        --primary-color: #5C6AC4; /* Azul lavanda */
+        --secondary-color: #8D6EE5; /* Morado suave */
+        --accent-color: #D3D8EE; /* Fondo claro */
+        --text-primary: #34495E;
+        --text-secondary: #7F8C8D;
+        --background-light: #F4F7FB;
+        --message-bg-user: #E8F0FE; /* Azul muy suave */
+        --message-bg-assistant: #FFFFFF; /* Blanco */
     }
+    
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        background-attachment: fixed;
+        background-color: var(--background-light);
+        color: var(--text-primary);
     }
     .block-container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
+        background: var(--message-bg-assistant);
+        border-radius: 15px;
         padding: 2rem;
         margin-top: 2rem;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        border: 1px solid #EAECEF;
     }
     h1 {
         font-family: 'Poppins', sans-serif;
@@ -124,8 +122,8 @@ def load_custom_css():
         text-align: center;
         font-weight: 600;
         font-size: 2.5rem;
-        margin-bottom: 1rem;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 0.5rem;
+        text-shadow: none;
     }
     .subtitle {
         font-family: 'Inter', sans-serif;
@@ -136,53 +134,53 @@ def load_custom_css():
         font-weight: 300;
     }
     [data-testid="stChatMessage"] {
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 15px;
+        background: var(--message-bg-assistant);
+        border-radius: 12px;
         padding: 1rem;
         margin: 0.5rem 0;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         font-family: 'Inter', sans-serif;
         border-left: 4px solid transparent;
     }
     [data-testid="stUserChatMessage"] {
-        background: linear-gradient(135deg, var(--gentle-blue) 0%, #E1F5FE 100%);
-        border-left-color: var(--accent-color);
+        background: var(--message-bg-user);
+        border-left-color: var(--primary-color);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
     [data-testid="stChatMessage"] {
-        background: linear-gradient(135deg, var(--gentle-purple) 0%, #F3E5F5 100%);
         border-left-color: var(--secondary-color);
     }
     [data-testid="stChatInput"] {
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 25px;
-        padding: 0.5rem;
+        background: #FFFFFF;
+        border-radius: 20px;
+        padding: 0.5rem 1rem;
         margin-top: 1rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        border: 2px solid rgba(107, 115, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid #EAECEF;
     }
     [data-testid="stChatInput"]:focus-within {
         border-color: var(--primary-color);
-        box-shadow: 0 4px 20px rgba(107, 115, 255, 0.3);
-    }
-    [data-testid="stSpinner"] {
-        color: var(--primary-color);
+        box-shadow: 0 4px 20px rgba(92, 106, 196, 0.2);
     }
     .stButton > button {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        background-color: var(--primary-color);
         color: white;
         border: none;
-        border-radius: 10px;
+        border-radius: 8px;
         padding: 0.5rem 1.5rem;
         font-family: 'Poppins', sans-serif;
         font-weight: 500;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
     .stButton > button:hover {
+        background-color: var(--secondary-color);
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(107, 115, 255, 0.4);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
     }
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, var(--gentle-purple) 0%, white 100%);
+        background-color: #FFFFFF;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
     }
     .stMarkdown {
         font-family: 'Inter', sans-serif;
@@ -191,36 +189,23 @@ def load_custom_css():
     }
     .stChatMessage:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
     }
     @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     .main {
-        animation: fadeInUp 0.8s ease-out;
+        animation: fadeInUp 0.6s ease-out;
     }
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--background-light); }
     ::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+        background-color: #C3C9D5;
         border-radius: 10px;
     }
-    ::-webkit-scrollbar-thumb:hover {
-        background: var(--accent-color);
-    }
+    ::-webkit-scrollbar-thumb:hover { background-color: #9BA4B5; }
     </style>
     """, unsafe_allow_html=True)
 
