@@ -309,7 +309,7 @@ def cargar_sesion_usuario(session_id):
     # pero recuerda que necesitarías una fuente de datos como `st.session_state.all_sessions_log`
     return st.session_state.all_sessions_log.get(session_id, {}).get("history", [])
 
-def guardar_sesion_usuario(session_id, history):
+def guardar_sesion_usuario(session_id, st.session_state.history)
     """Guarda la conversación de la sesión actual en el log general."""
     session_data = {
         "timestamp": datetime.now().isoformat(),
@@ -355,9 +355,12 @@ def chat(message, history):
         Utiliza siempre Markdown para dar formato a tus respuestas. Usa listas, negritas y encabezados para que la información sea clara y fácil de leer. Asegúrate de usar saltos de línea para separar las ideas.
     """
     }
-    messages = [{"role": "system", "content": system_message.strip()}]
-    messages.extend(history[-MAX_HISTORY*2:])
-    messages.append({"role": "user", "content": message})
+    profile = st.session_state.get("current_profile", "Adultos")
+system_message = system_messages[profile]
+
+messages = [{"role": "system", "content": system_message.strip()}]
+messages.extend(history[-MAX_HISTORY*2:])
+messages.append({"role": "user", "content": message})
     
     headers = {
         "Content-Type": "application/json",
