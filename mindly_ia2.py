@@ -1,24 +1,43 @@
 import streamlit as st
-from huggingface_hub import InferenceClient
+import requests
 
-# Cargar la API Key desde secretos
-HF_TOKEN = st.secrets.get("hf_token")
+# Configuración
+API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
+HF_TOKEN = st.secrets["hf_token"]  # Asegurate de tener esto en .streamlit/secrets.toml
 
-# Inicializar cliente de Hugging Face
-client = InferenceClient("mistralai/Mistral-7B-Instruct-v0.1", token=HF_TOKEN)
+headers = {
+    "Authorization": f"Bearer {hf_token}",
+    "Content-Type": "application/json"
+}
 
-# Interfaz de Mindly
-st.title("🧠 Mindly - Tu espacio de escucha empática")
+# Función para generar respuesta
+def generar_respuesta(prompt):
+    payload = {
+        "inputs": prompt,
+        "parameters": {
+            "temperature": 0.7,
+            "max_new_tokens": 256,
+            "return_full_text": False
+        }
+    }
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        output = response.json()
+        return output[0]["generated_text"]
+    except Exception as e:
+        return "Ups... algo salió mal. Pero no te preocupes, estoy acá para ayudarte 💛"
+
+# Interfaz Streamlit
+st.set_page_config(page_title="Mindly", page_icon="🧠", layout="centered")
+st.title("🧠 Mindly - Tu espacio de bienestar emocional")
 
 user_input = st.text_area("¿Cómo te sentís hoy?", placeholder="Podés contarme lo que quieras...")
 
-if st.button("Hablar con Mindly") and user_input:
-    with st.spinner("Mindly está pensando con cariño..."):
-        response = client.text_generation(
-            prompt=f"<|system|>Eres un asistente cálido y empático llamado Mindly.<|user|>{user_input}<|assistant|>",
-            max_new_tokens=300,
-            temperature=0.7,
-            top_p=0.95
-        )
-        st.markdown("### 🌟 Mindly responde:")
-        st.write(response)
+if st.button("Hablar con Mindly"):
+    if user_input.strip():
+        with st.spinner("Mindly está pensando..."):
+            respuesta = generar_respuesta(user_input)
+            st.markdown(f"**Mindly:** {respuesta}")
+    else:
+        st.warning("Por favor, escribí algo para comenzar 💬")
