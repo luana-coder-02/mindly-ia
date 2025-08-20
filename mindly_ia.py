@@ -357,15 +357,19 @@ system_messages = {
 
 @st.cache_data(show_spinner=False)
 def chat(message, history, profile):
+    # Obtiene el mensaje del sistema según el perfil
     system_message = system_messages.get(profile, system_messages["Adultos"])
+    
+    # Construye el historial de mensajes para la API
     messages = [{"role": "system", "content": system_message.strip()}]
-    messages.extend(history[-MAX_HISTORY*2:])
+    messages.extend(history[-MAX_HISTORY*2:])  # Últimos mensajes
     messages.append({"role": "user", "content": message})
     
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {MISTRAL_API_KEY}"
     }
+    
     payload = {
         "model": "mistral-large-latest",
         "messages": messages
@@ -379,32 +383,22 @@ def chat(message, history, profile):
         )
         response.raise_for_status()
         response_data = response.json()
-        respuesta_final = response_data["choices"][0]["message"]["content"]
         
-        # 1. Convierte los encabezados Markdown (#, ##, etc.) a negrita.
+        # Manejo seguro si la API cambia el formato
+        respuesta_final = response_data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        
+        # Formateo del Markdown
         respuesta_final = re.sub(r'^\s*#+\s*(.+)', r'**\1**', respuesta_final, flags=re.MULTILINE)
-        
-        # 2. Normaliza los saltos de línea (asegura que haya dos entre párrafos).
         respuesta_final = re.sub(r'\n{2,}', '\n\n', respuesta_final)
-
-        # 3. Reemplaza los bullets no estándar (`•`, `*`) por un guion de lista de Markdown.
         respuesta_final = re.sub(r'\n\s*?([•*])\s?', '\n- ', respuesta_final)
-        
-        # 4. Convierte el sub-bullet `o` en un guion de sub-lista de Markdown.
         respuesta_final = re.sub(r'\n\s*?([o])\s?', '\n  - ', respuesta_final)
-
-        # 5. Elimina cualquier espacio extra al inicio y final.
         respuesta_final = respuesta_final.strip()
         
         return respuesta_final
 
     except requests.exceptions.RequestException as e:
         st.error(f"Error al conectar con la API de Mistral: {e}")
-        return ""
-    except KeyError:
-        st.error("Error al procesar la respuesta de la API de Mistral.")
-        return ""
-
+        return "Lo siento, no puedo responder en este momento."
 
 # ==== Interfaz en Streamlit ====
 st.set_page_config(
