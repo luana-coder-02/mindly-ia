@@ -3,7 +3,7 @@ import uuid
 import requests
 import re
 
-st.secrets["mistralapi"]
+st.secrets["mindly_ia2"]
 
 # Diccionario de perfiles con system prompts breves
 system_messages = {
@@ -29,7 +29,7 @@ def chat(prompt, history, perfil):
     }
 
     headers = {
-        "Authorization": f"Bearer {st.secrets['mistralapi']}",
+        "Authorization": f"Bearer {st.secrets['mindly_ia2']}",
         "Content-Type": "application/json"
     }
 
