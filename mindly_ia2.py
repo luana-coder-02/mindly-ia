@@ -5,7 +5,7 @@ from huggingface_hub import InferenceClient
 HF_TOKEN = st.secrets.get("hf_token")
 
 # Inicializar cliente de Hugging Face
-client = InferenceClient("HuggingFaceH4/mistralai/Mistral-7B-Instruct-v0.1", token=HF_TOKEN)
+client = InferenceClient("mistralai/Mistral-7B-Instruct-v0.1", token=HF_TOKEN)
 
 # Interfaz de Mindly
 st.title("🧠 Mindly - Tu espacio de escucha empática")
