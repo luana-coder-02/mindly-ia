@@ -1,17 +1,41 @@
 import streamlit as st
 import uuid
+import requests
 
-# Diccionario de perfiles con mensajes base
+# Diccionario de perfiles con system prompts breves
 system_messages = {
     "Adultos": "Eres un asistente empático que brinda apoyo emocional a adultos.",
     "Adolescentes": "Eres un compañero comprensivo para adolescentes que buscan orientación.",
     "Niños": "Eres un amigo amable que ayuda a los niños a entender sus emociones."
 }
 
-# Simulación de respuesta del asistente
+# Función que llama a la API de Mistral
 def chat(prompt, history, perfil):
-    # En una versión real, acá iría la llamada a la API
-    return f"Gracias por compartir eso. ¿Querés que exploremos cómo te sentís respecto a eso?"
+    system_prompt = system_messages.get(perfil, "Eres un asistente empático.")
+    trimmed_history = history[-6:]  # últimos 3 pares de mensajes
+
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(trimmed_history)
+    messages.append({"role": "user", "content": prompt})
+
+    payload = {
+        "model": "mistral-7b-instruct",
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": 512
+    }
+
+    headers = {
+        "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.post("https://api.mistral.ai/v1/chat/completions", json=payload, headers=headers)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        return "😕 Ups, hubo un problema al generar la respuesta. Intentá de nuevo más tarde."
 
 # Función principal
 def main():
@@ -25,30 +49,26 @@ def main():
     st.title("🧠 Mindly")
     st.markdown("Tu compañero de bienestar mental. Conversaciones empáticas y apoyo emocional.")
 
-    # Selector de perfil
     st.selectbox("Elegí tu perfil:", options=list(system_messages.keys()), key="current_profile")
 
-    # Botón para nueva conversación
     if st.button("🗑️ Nueva conversación"):
         st.session_state.history = []
 
-    # Mensaje inicial si no hay historial
     if len(st.session_state.history) == 0:
         st.chat_message("assistant").markdown("¡Hola! ¿En qué puedo ayudarte hoy?")
 
-    # Mostrar historial
     for i in range(0, len(st.session_state.history), 2):
         st.chat_message("user").markdown(st.session_state.history[i]["content"])
         if i + 1 < len(st.session_state.history):
             st.chat_message("assistant").markdown(st.session_state.history[i + 1]["content"])
 
-    # Input del usuario
     if prompt := st.chat_input("💬 Escribí lo que estás pensando..."):
         st.session_state.history.append({"role": "user", "content": prompt})
 
-        respuesta = chat(prompt, st.session_state.history, st.session_state.current_profile)
-        st.session_state.history.append({"role": "assistant", "content": respuesta})
+        with st.spinner("🧠 Mindly está reflexionando..."):
+            respuesta = chat(prompt, st.session_state.history, st.session_state.current_profile)
 
+        st.session_state.history.append({"role": "assistant", "content": respuesta})
         st.chat_message("assistant").markdown(respuesta)
 
 if __name__ == "__main__":
