@@ -471,9 +471,9 @@ def main():
                 
                 if i + 1 < len(st.session_state.history):
                     assistant_message = st.session_state.history[i + 1]["content"]
-        
-        with st.container():
-            st.chat_message("assistant").markdown(assistant_message)
+                    
+                    with st.container():
+                        st.chat_message("assistant").markdown(assistant_message)
             
             col1, col2 = st.columns([0.8, 0.2])  # Ajusta el ancho de las columnas
             
