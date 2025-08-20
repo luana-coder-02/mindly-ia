@@ -336,7 +336,6 @@ def chat(message, history, profile):
 
 # --- 3. Función principal de la aplicación ---
 def main():
-    # Inicialización de variables de sesión
     if 'history' not in st.session_state:
         st.session_state.history = []
     if "current_session_id" not in st.session_state:
