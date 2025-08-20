@@ -1,6 +1,9 @@
 import streamlit as st
 import uuid
 import requests
+import re
+
+st.secrets["mistralapi"]
 
 # Diccionario de perfiles con system prompts breves
 system_messages = {
@@ -26,7 +29,7 @@ def chat(prompt, history, perfil):
     }
 
     headers = {
-        "Authorization": f"Bearer {st.secrets['MISTRAL_API_KEY']}",
+        "Authorization": f"Bearer {st.secrets['mistralapi']}",
         "Content-Type": "application/json"
     }
 
