@@ -467,7 +467,7 @@ def main():
             """)
             
             for i in range(0, len(st.session_state.history), 2):
-    st.chat_message("user").markdown(st.session_state.history[i]["content"])
+                st.chat_message("user").markdown(st.session_state.history[i]["content"])
     
     if i + 1 < len(st.session_state.history):
         assistant_message = st.session_state.history[i + 1]["content"]
