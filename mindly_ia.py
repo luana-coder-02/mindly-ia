@@ -544,15 +544,39 @@ for i in range(0, len(st.session_state.history), 2):
 
 # Input del usuario
 if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
-    st.chat_message("user").markdown(prompt)
+    
+    # 1. Validación de entrada del usuario (Mensaje vacío o solo espacios)
+    if not prompt or not prompt.strip():
+        st.warning("Por favor, ingresa un mensaje válido para continuar.")
+        st.stop()
+    
+    # Prepara el mensaje para la API (truncado si es necesario)
+    prompt_to_api = prompt
+    if len(prompt_to_api) > MAX_PROMPT_LENGTH:
+        prompt_to_api = prompt_to_api[:MAX_PROMPT_LENGTH]
+        st.warning(f"Tu mensaje ha sido acortado a {MAX_PROMPT_LENGTH} caracteres para optimizar la conversación.")
+
+    # Muestra el mensaje del usuario en el chat
+    st.chat_message("user", avatar="👤").markdown(prompt)
     st.session_state.history.append({"role": "user", "content": prompt})
+
+    # 2. Muestra un mensaje de estado detallado mientras se genera la respuesta
+    with st.status("🧠 **Mindly está reflexionando...**", expanded=True) as status:
+        status.update(label="✨ Analizando tu mensaje...")
+        
+        # 3. Llama a la función 'chat' con todos los argumentos requeridos
+        respuesta_final = chat(prompt_to_api, st.session_state.history, st.session_state.current_profile)
+        
+        status.update(label="✅ Respuesta generada. ¡Listo!", state="complete", expanded=False)
+
+    # 4. Muestra la respuesta del asistente
+    if respuesta_final and respuesta_final.strip():
+        st.chat_message("assistant", avatar="🧠").markdown(respuesta_final)
+    else:
+        st.chat_message("assistant", avatar="🧠").markdown("Lo siento, tuve un problema técnico y no pude generar una respuesta. Por favor, intenta de nuevo.")
+        
+    st.session_state.history.append({"role": "assistant", "content": respuesta_final if respuesta_final else "Error: No se pudo generar una respuesta."})
     
-    with st.spinner("🧠 Mindly está reflexionando..."):
-        respuesta_final = chat(prompt, st.session_state.history)
-        st.chat_message("assistant").markdown(respuesta_final)
-    
-    st.session_state.history.append({"role": "assistant", "content": respuesta_final})
-    intencion = detectar_intencion(prompt)
-    
+    # Guarda la conversación
     session_id = st.session_state.get('current_session_id', generar_session_id())
     guardar_sesion_usuario(session_id, st.session_state.history)
