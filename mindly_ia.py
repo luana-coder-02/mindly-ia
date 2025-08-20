@@ -167,7 +167,7 @@ def detectar_intencion(mensaje):
         
 @st.cache_data(show_spinner=False)
 def chat(message, history):
-    system_message = {
+    system_messages = {
     "Adultos": """
         Eres Mindly, un chatbot empático y profesional, experto en ayudar a adultos a encontrar información clara sobre psicología.
         Responde de forma cercana y sin jerga técnica.
@@ -253,8 +253,8 @@ with st.sidebar:
     st.markdown("### 👤 Elige tu perfil")
     st.session_state.current_profile = st.selectbox(
         "Elige tu perfil:",
-        list(SYSTEM_MESSAGES.keys()),
-        index=list(SYSTEM_MESSAGES.keys()).index(st.session_state.current_profile),
+        list(system_messages.keys()),
+        index=list(system_messages.keys()).index(st.session_state.current_profile),
         label_visibility="collapsed"
     )
     st.markdown("### ℹ️ Sobre Mindly")
