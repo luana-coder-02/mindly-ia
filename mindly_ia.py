@@ -410,10 +410,7 @@ def chat(message, history, profile):
         return "Lo siento, no puedo responder en este momento debido a un problema de conexión."
     except (KeyError, IndexError) as e:
         st.error(f"Error al procesar la respuesta: {e}")
-        return "Lo siento, hubo un problema procesando la respuesta. Por favor, intenta de nuevo."
-    except Exception as e:
-        st.error(f"Error inesperado: {e}")
-        return "Lo siento, ocurrió un error inesperado. Por favor, intenta de nuevo."
+        return "Lo siento, hubo un error al procesar la respuesta"
 
 # ==== Interfaz en Streamlit ====
 st.set_page_config(
