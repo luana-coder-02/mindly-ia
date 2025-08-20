@@ -21,7 +21,8 @@ for msg in st.session_state.messages:
 
 # Función para llamar a Mistral
 def get_mistral_response(prompt, api_key):
-    headers = {"Authorization": f"Bearer {mistralapi}"}
+    # La variable que se usa aquí debe ser el parámetro 'api_key'
+    headers = {"Authorization": f"Bearer {api_key}"}
     payload = {
         "model": "mistral-7b-instruct",
         "messages": [{"role": "user", "content": prompt}]
@@ -43,8 +44,9 @@ if user_input:
         st.markdown(user_input)
 
     with st.chat_message("assistant"):
-        api_key = st.secrets.get("MISTRAL_API_KEY", "")
+        # Se obtiene la clave directamente aquí
+        api_key = st.secrets.get("mistralapi", "")
+        # Se pasa la clave a la función correctamente
         response = get_mistral_response(user_input, api_key)
         st.markdown(response)
         st.session_state.messages.append({"role": "assistant", "content": response})
-        
