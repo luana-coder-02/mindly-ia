@@ -551,18 +551,16 @@ for i in range(0, len(st.session_state.history), 2):
         st.chat_message("assistant").markdown(assistant_message)
         st.text_input("Copiar al portapapeles:", assistant_message, label_visibility="collapsed")
 
-# Input del usuario
+# 1. Validación de entrada del usuario
 if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
-    
-    # 1. Validación de entrada del usuario
-    if not prompt or not prompt.strip():
+    # Validación de entrada
+    if not prompt.strip():
         st.warning("Por favor, ingresa un mensaje válido para continuar.")
         st.stop()
-    
+
     # Prepara el mensaje para la API (truncado si es necesario)
-    prompt_to_api = prompt
-    if len(prompt_to_api) > MAX_PROMPT_LENGTH:
-        prompt_to_api = prompt_to_api[:MAX_PROMPT_LENGTH]
+    prompt_to_api = prompt[:MAX_PROMPT_LENGTH]
+    if len(prompt) > MAX_PROMPT_LENGTH:
         st.warning(f"Tu mensaje ha sido acortado a {MAX_PROMPT_LENGTH} caracteres para optimizar la conversación.")
 
     # Muestra el mensaje del usuario en el chat
@@ -581,7 +579,7 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
         error_msg = "Lo siento, tuve un problema técnico y no pude generar una respuesta. Por favor, intenta de nuevo."
         st.chat_message("assistant").markdown(error_msg)
         st.session_state.history.append({"role": "assistant", "content": error_msg})
-    
+
     # 4. Detecta intención y guarda la conversación
     intencion = detectar_intencion(prompt)
     session_id = st.session_state.get('current_session_id', generar_session_id())
