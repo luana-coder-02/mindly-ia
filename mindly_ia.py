@@ -5,7 +5,7 @@ import requests
 import uuid
 from datetime import datetime
 from functools import lru_cache
-from streamlit_extras.clipboard import copy_to_clipboard
+from streamlit_extras.copy_to_clipboard import copy_to_clipboard
 
 # --- 1. Configuración inicial y variables globales ---
 ADMIN_MODE = st.query_params.get("admin") == "true"
