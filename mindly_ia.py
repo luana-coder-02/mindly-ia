@@ -5,7 +5,6 @@ import requests
 import uuid
 from datetime import datetime
 from functools import lru_cache
-from streamlit_extras.clipboard import copy_to_clipboard
 
 # --- 1. Configuración inicial y variables globales ---
 ADMIN_MODE = st.query_params.get("admin") == "true"
@@ -445,13 +444,9 @@ def main():
         st.chat_message("user").markdown(st.session_state.history[i]["content"])
         if i+1 < len(st.session_state.history):
             assistant_message = st.session_state.history[i+1]["content"]
-            with st.container():
-                st.chat_message("assistant").markdown(assistant_message)
-                col1, col2 = st.columns([0.8, 0.2])
-                with col2:
-                    copy_to_clipboard(assistant_message, "📄 Copiar")
+            st.chat_message("assistant").markdown(assistant_message)
 
-    # Input del usuario
+# Input del usuario
     if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
         if not prompt or not prompt.strip():
             st.warning("Por favor, ingresa un mensaje válido para continuar.")
@@ -464,9 +459,8 @@ def main():
 
         st.chat_message("user").markdown(prompt)
         st.session_state.history.append({"role": "user", "content": prompt})
-        
+    
         with st.status("🧠 **Mindly está reflexionando...**", expanded=True) as status:
-            status.update(label="✨ Analizando tu mensaje...")
             if len(prompt_to_api.strip()) < 100:
                 respuesta_final = get_cached_response(prompt_to_api)
             else:
