@@ -465,33 +465,33 @@ def main():
             
             ¿En qué puedo ayudarte hoy?
             """)
-
-    # Mostrar historial de conversación
-for i in range(0, len(st.session_state.history), 2):
+            
+            for i in range(0, len(st.session_state.history), 2):
     st.chat_message("user").markdown(st.session_state.history[i]["content"])
-    if i+1 < len(st.session_state.history):
-        assistant_message = st.session_state.history[i+1]["content"]
+    
+    if i + 1 < len(st.session_state.history):
+        assistant_message = st.session_state.history[i + 1]["content"]
         
         with st.container():
             st.chat_message("assistant").markdown(assistant_message)
             
-            col1, col2 = st.columns([0.8, 0.2]) # Ajusta el ancho de las columnas
-        
-        with col2:
-            safe_message = html.escape(assistant_message)
-            st.markdown(f"""
-    <script>
-    function copiarTexto() {{
-        navigator.clipboard.writeText(`{safe_message}`);
-        alert("✅ Texto copiado al portapapeles");
-    }}
-    </script>
-    <button onclick="copiarTexto()"
-            style="background-color:#6B73FF;color:white;border:none;padding:6px 12px;
-                   font-size:14px;border-radius:6px;cursor:pointer;">
-        📋 Copiar
-    </button>
-""", unsafe_allow_html=True)
+            col1, col2 = st.columns([0.8, 0.2])  # Ajusta el ancho de las columnas
+            
+            with col2:
+                safe_message = html.escape(assistant_message)
+                st.markdown(f"""
+                    <script>
+                    function copiarTexto() {{
+                        navigator.clipboard.writeText(`{safe_message}`);
+                        alert("✅ Texto copiado al portapapeles");
+                    }}
+                    </script>
+                    <button onclick="copiarTexto()"
+                            style="background-color:#6B73FF;color:white;border:none;padding:6px 12px;
+                                   font-size:14px;border-radius:6px;cursor:pointer;">
+                        📋 Copiar
+                    </button>
+                """, unsafe_allow_html=True)
                 
     # Input del usuario
 if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
