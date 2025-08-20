@@ -459,13 +459,13 @@ def main():
 
         st.chat_message("user").markdown(prompt)
         st.session_state.history.append({"role": "user", "content": prompt})
-    
-        with st.status("🧠 **Mindly está reflexionando...**", expanded=True) as status:
+        
+        # --- CÓDIGO MODIFICADO ---
+        with st.spinner("🧠 **Mindly está reflexionando...**"):
             if len(prompt_to_api.strip()) < 100:
                 respuesta_final = get_cached_response(prompt_to_api)
             else:
                 respuesta_final = chat(prompt_to_api, st.session_state.history)
-            status.update(label="✅ Respuesta generada. ¡Listo!", state="complete", expanded=False)
 
         if respuesta_final and respuesta_final.strip():
             st.chat_message("assistant").markdown(respuesta_final)
