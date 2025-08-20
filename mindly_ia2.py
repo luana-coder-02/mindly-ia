@@ -2,6 +2,8 @@ import streamlit as st
 import uuid
 import requests
 
+MISTRAL_API_KEY = st.secrets.get("mistralapi")
+
 # Diccionario de perfiles con system prompts breves
 system_messages = {
     "Adultos": "Eres un asistente empático que brinda apoyo emocional a adultos.",
