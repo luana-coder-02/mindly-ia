@@ -5,7 +5,8 @@ import requests
 import uuid
 from datetime import datetime
 from functools import lru_cache
-from streamlit_extras.copy_to_clipboard import copy_to_clipboard
+import html
+    
 
 # --- 1. Configuración inicial y variables globales ---
 ADMIN_MODE = st.query_params.get("admin") == "true"
@@ -476,9 +477,23 @@ for i in range(0, len(st.session_state.history), 2):
             st.chat_message("assistant").markdown(assistant_message)
             
             col1, col2 = st.columns([0.8, 0.2]) # Ajusta el ancho de las columnas
-            with col2:
-                copy_to_clipboard(assistant_message, "📄 Copiar")
-
+        
+        with col2:
+            safe_message = html.escape(assistant_message)
+            st.markdown(f"""
+    <script>
+    function copiarTexto() {{
+        navigator.clipboard.writeText(`{safe_message}`);
+        alert("✅ Texto copiado al portapapeles");
+    }}
+    </script>
+    <button onclick="copiarTexto()"
+            style="background-color:#6B73FF;color:white;border:none;padding:6px 12px;
+                   font-size:14px;border-radius:6px;cursor:pointer;">
+        📋 Copiar
+    </button>
+""", unsafe_allow_html=True)
+                
     # Input del usuario
 if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
     if not prompt or not prompt.strip():
