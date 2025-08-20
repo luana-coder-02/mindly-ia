@@ -30,4 +30,4 @@ Si tienes preguntas sobre el proyecto, te interesa mi trabajo o quieres hablar s
 
 [LinkedIn](https://www.linkedin.com/in/luana-genes-b55595337)
 
-**Email**: luanagenes275@gmail.com
+**Email**: luanagenes275@gmail.com o genesluana275@gmail.com
