@@ -439,9 +439,9 @@ def guardar_log(usuario_msg, modelo_resp, intencion):
     with open(LOG_FILE, "w", encoding="utf-8") as f:
         json.dump(chat_log, f, ensure_ascii=False, indent=2)
 
-def chat(message, history, system_prompt):
+def chat(message, history, system_message):
     try:
-        messages = [{"role": "system", "content": system_prompt}]
+        messages = [{"role": "system", "content": system_message}]
         messages.extend(history[-MAX_HISTORY*2:])
         messages.append({"role": "user", "content": message})
 
@@ -606,40 +606,11 @@ if "history" not in st.session_state:
 if "gist_id" not in st.session_state:
     st.session_state.gist_id = GIST_ID
 
-if "user_name" not in st.session_state:
-    st.session_state.user_name = None
-
-show_chat = False
-system_message_personalized = system_message  # Por defecto, usamos el mensaje original
-
-# Si no tenemos el nombre, lo pedimos
-if not st.session_state.user_name:
-    st.info("👋 ¡Hola! Para empezar, ¿cómo te gustaría que te llame?")
-    name_input = st.text_input("Escribe tu nombre o un apodo aquí", key="name_input_key")
-    
-    # Si el usuario presiona Enter después de escribir el nombre...
-    if name_input:
-        st.session_state.user_name = name_input.strip()
-        st.rerun() # Volvemos a ejecutar para limpiar el input y mostrar el chat
-else:
-    # Si ya tenemos el nombre, activamos la visualización del chat
-    show_chat = True
-    
-    # Y modificamos el system_message para incluir el nombre
-    system_message_personalized = (
-        f"{system_message} "
-        f"El nombre del usuario es {st.session_state.user_name}. "
-        "Dirígete a él por su nombre cuando sea apropiado para crear una conexión más cercana y empática."
-    )
-
-# Mensaje de bienvenida si no hay historial
-# Solo mostramos el chat si tenemos el nombre del usuario
-if show_chat:
     if len(st.session_state.history) == 0:
         with st.chat_message("assistant"):
             # Mensaje de bienvenida personalizado con el nombre
             st.markdown(f"""
-            ¡Hola, **{st.session_state.user_name}**! Soy **Mindly**, tu compañero de bienestar mental. 🌟
+            ¡Hola, soy **Mindly**, tu compañero de bienestar mental. 🌟
             
             Estoy aquí para ayudarte con:
             - Manejo de emociones y estrés
