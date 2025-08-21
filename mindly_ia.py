@@ -578,9 +578,6 @@ if "history" not in st.session_state:
 if "gist_id" not in st.session_state:
     st.session_state.gist_id = GIST_ID
 
-if "survey_shown" not in st.session_state:
-    st.session_state.survey_shown = False
-
 if not st.session_state.history:
     with st.chat_message("assistant"):
         st.markdown(f"""
@@ -606,26 +603,9 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
             respuesta_final = chat(prompt, st.session_state.history, system_message)
             st.chat_message("assistant").markdown(respuesta_final)
             st.session_state.history.append({"role": "assistant", "content": respuesta_final})
-            if len(st.session_state.history) >= 4 and not st.session_state.survey_shown:
-                st.markdown("---")
-                st.markdown("#### ¿Te ha sido útil esta conversación?")
-                col1, col2, col3 = st.columns([0.1, 0.1, 0.8])
-                with col1:
-                    if st.button("👍 Sí", key="survey_yes"):
-                        st.session_state.survey_shown = True
-                        guardar_log(prompt, respuesta_final, detectar_intencion(prompt), feedback="positivo")
-                        st.toast("¡Gracias por tu respuesta!")
-                        st.rerun()
-                with col2:
-                    if st.button("👎 No", key="survey_no"):
-                        st.session_state.survey_shown = True
-                        guardar_log(prompt, respuesta_final, detectar_intencion(prompt), feedback="negativo")
-                        st.toast("¡Lo siento! Seguiremos mejorando.")
-                        st.rerun()
-                st.markdown("---")
-            else:
-                intencion = detectar_intencion(prompt)
-                guardar_log(prompt, respuesta_final, intencion)
+                
+            intencion = detectar_intencion(prompt)
+            guardar_log(prompt, respuesta_final, intencion)
         
         except Exception as e:
             st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
