@@ -436,8 +436,8 @@ def chat(message, history, system_message):
         )
 
         return response.choices[0].message.content
-
-except Exception as e:
+    
+    except Exception as e:
     error_msg = str(e)
     if "401" in error_msg or "unauthorized" in error_msg.lower():
         return "❌ Lo siento, no puedo procesar tu solicitud ahora. La clave de API de Mistral es incorrecta. Si eres el administrador, por favor revisa la configuración."
