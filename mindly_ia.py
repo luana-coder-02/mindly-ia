@@ -609,7 +609,7 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
             if len(st.session_state.history) >= 4 and not st.session_state.survey_shown:
                 st.markdown("---")
                 st.markdown("#### ¿Te ha sido útil esta conversación?")
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns([0.1, 0.1, 0.8])
                 with col1:
                     if st.button("👍 Sí", key="survey_yes"):
                         st.session_state.survey_shown = True
