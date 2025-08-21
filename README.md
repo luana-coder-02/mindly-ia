@@ -17,13 +17,18 @@ El objetivo es ofrecer un recurso empático y accesible que proporcione informac
 - **JSON**
 - **CSS**
 
+## ✨ Mejoras Recientes
+El proyecto ha evolucionado con funcionalidades adicionales para mejorar la experiencia del usuario y la versatilidad del chatbot.
+
+- **Sistema de Evaluación:** Se añadió un mecanismo de **retroalimentación** con botones de "👍" y "👎" para que los usuarios puedan evaluar la utilidad de las respuestas. Esta funcionalidad permite recopilar datos valiosos para futuras optimizaciones del modelo.
+
 ## 🔮 Próximas Mejoras y Hoja de Ruta
-El proyecto está en constante evolución. Las siguientes funcionalidades se encuentran en la hoja de ruta para futuras versiones:
+Las siguientes funcionalidades se encuentran en la hoja de ruta para futuras versiones:
 
 - **Secciones Personalizadas por Usuario**: Se añadirán secciones específicas (Adultos, Adolescentes, Padres y Profesionales).
 - **Respuestas Adaptadas al Contexto**: El chatbot ajustará su tono y contenido de respuesta de manera automática según la sección en la que el usuario esté navegando, ofreciendo una experiencia mucho más personalizada y relevante.
 
-🤝 **Contacto**
+🤝 **Contacto**: 
 Si tienes preguntas sobre el proyecto, te interesa mi trabajo o quieres hablar sobre una oportunidad, no dudes en contactarme.
 
 **Luana Genes**
