@@ -6,8 +6,6 @@ import os
 from datetime import datetime
 from mistralai import Mistral
 
-# ==== CONFIGURACIÓN DE ADMINISTRADOR ====
-# Admin mode se activa con /?admin=true en la URL
 def verificar_admin():
     """Verifica si se accede con parámetro admin=true en la URL"""
     query_params = st.query_params
@@ -15,7 +13,6 @@ def verificar_admin():
 
 ADMIN_MODE = verificar_admin()
 
-# ==== Configuración del chatbot ====
 system_message = (
     "Eres Mindly, un chatbot empático, accesible y profesional. "
     "Tu objetivo es ayudar a los usuarios a encontrar información clara y confiable sobre psicología. "
@@ -26,18 +23,15 @@ system_message = (
 LOG_FILE = "chat_log.json"
 MAX_HISTORY = 8
 
-# Obtener API key de forma segura - buscar en ambos nombres posibles
 MISTRAL_API_KEY = st.secrets.get("MISTRAL_API_KEY", 
                  st.secrets.get("mistralapi", 
                  os.getenv("MISTRAL_API_KEY", 
                  os.getenv("mistralapi", ""))))
 
-# Verificar que existe la API key y no está vacía
 if not MISTRAL_API_KEY or MISTRAL_API_KEY.strip() == "":
     st.error("❌ No se encontró la API key de Mistral o está vacía")
     st.info("💡 Configura MISTRAL_API_KEY en .streamlit/secrets.toml o como variable de entorno")
     
-    # En modo admin, mostrar más detalles para debugging
     if ADMIN_MODE:
         st.warning("🔧 Debug Info (Solo Admin):")
         st.code(f"""
@@ -46,14 +40,12 @@ if not MISTRAL_API_KEY or MISTRAL_API_KEY.strip() == "":
         """)
     st.stop()
 
-# Verificar que la API key tiene un formato válido
 if len(MISTRAL_API_KEY.strip()) < 20:  # Las API keys suelen ser largas
     st.error("❌ La API key parece ser demasiado corta o inválida")
     if ADMIN_MODE:
         st.code(f"API Key length: {len(MISTRAL_API_KEY)} characters")
     st.stop()
 
-# Crear cliente de Mistral
 try:
     client = Mistral(api_key=MISTRAL_API_KEY.strip())
 except Exception as e:
@@ -65,7 +57,6 @@ except Exception as e:
         st.error(f"❌ Error al conectar con Mistral: {error_str}")
     st.stop() 
 
-# ==== CONFIGURACIÓN DE GIST ====
 GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "")
 GIST_ID = st.secrets.get("GIST_ID", "")
 
@@ -155,10 +146,6 @@ class GistManager:
                 st.session_state.gist_id = gist_id
             return success, url if success else gist_id
 
-# ==== Función para verificar acceso de administrador ====
-# Removida - no necesaria para uso simple
-
-# ==== PERSONALIZACIÓN DE ESTILOS ====
 def load_custom_css():
     st.markdown("""
     <style>
@@ -407,14 +394,12 @@ def load_custom_css():
     </style>
     """, unsafe_allow_html=True)
 
-# ==== Cargar historial de logs ====
 try:
     with open(LOG_FILE, "r", encoding="utf-8") as f:
         chat_log = json.load(f)
 except FileNotFoundError:
     chat_log = []
 
-# ==== Funciones del chatbot ====
 def detectar_intencion(mensaje):
     mensaje = mensaje.lower()
     if re.search(r"\b(ansiedad|depresión|estrés|angustia|tristeza|miedo)\b", mensaje):
@@ -451,20 +436,19 @@ def chat(message, history, system_message):
         )
 
         return response.choices[0].message.content
-    
-    except Exception as e:
-        # Manejo de errores más detallado
-        error_msg = str(e)
-        if "401" in error_msg or "unauthorized" in error_msg.lower():
-            return "❌ Error de autenticación: La API key parece ser incorrecta. Por favor verifica tu clave de Mistral."
-        elif "429" in error_msg or "rate limit" in error_msg.lower():
-            return "⏳ Límite de solicitudes alcanzado. Por favor espera un momento antes de intentar de nuevo."
-        elif "400" in error_msg or "bad request" in error_msg.lower():
-            return "⚠️ Error en la solicitud. El mensaje puede ser demasiado largo o contener caracteres no válidos."
-        elif "500" in error_msg or "internal server error" in error_msg.lower():
-            return "🔧 Error del servidor de Mistral. Por favor intenta de nuevo en unos momentos."
-        else:
-            return f"❌ Error inesperado: {error_msg}. Por favor verifica tu conexión e intenta de nuevo."
+
+except Exception as e:
+    error_msg = str(e)
+    if "401" in error_msg or "unauthorized" in error_msg.lower():
+        return "❌ Lo siento, no puedo procesar tu solicitud ahora. La clave de API de Mistral es incorrecta. Si eres el administrador, por favor revisa la configuración."
+    elif "429" in error_msg or "rate limit" in error_msg.lower():
+        return "⏳ Hemos alcanzado el límite de solicitudes. Por favor, espera unos minutos y vuelve a intentarlo."
+    elif "400" in error_msg or "bad request" in error_msg.lower():
+        return "⚠️ Hubo un problema con la solicitud. Tal vez el mensaje era muy largo. ¿Podrías intentar una versión más corta?"
+    elif "500" in error_msg or "internal server error" in error_msg.lower():
+        return "🔧 Ups, parece que Mistral está teniendo problemas técnicos. Por favor, intenta de nuevo en unos momentos."
+    else:
+        return f"❌ Ha ocurrido un error inesperado. Por favor, revisa tu conexión a internet e inténtalo de nuevo."
 
 # ==== Interfaz en Streamlit ====
 st.set_page_config(
@@ -474,10 +458,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Aplicar estilos personalizados
 load_custom_css()
 
-# Indicador visual de modo administrador
 if ADMIN_MODE:
     st.markdown("""
     <div class="admin-indicator">
@@ -485,7 +467,6 @@ if ADMIN_MODE:
     </div>
     """, unsafe_allow_html=True)
 
-# Header con diseño mejorado
 st.markdown("""
     <div style="text-align: center; margin-bottom: 2rem;">
         <h1>🧠 Mindly</h1>
@@ -493,7 +474,6 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Sidebar con información adicional
 with st.sidebar:
     st.markdown("### ℹ️ Sobre Mindly")
     st.markdown("""
@@ -507,15 +487,12 @@ with st.sidebar:
     """)
     
     if st.button("🔄 Nueva Conversación"):
-        st.session_state.history = []
-        st.rerun()
+    st.session_state.history = []
     
-    # === GESTIÓN DE LOGS (SOLO MODO ADMIN) ===
     if ADMIN_MODE and GITHUB_TOKEN:
         st.markdown("---")
         st.markdown("### 📊 Panel de Administrador")
         
-        # Mostrar estadísticas de logs
         if chat_log:
             st.markdown(f"""
             <div class="gist-info">
@@ -526,7 +503,6 @@ with st.sidebar:
             </div>
             """, unsafe_allow_html=True)
         
-        # Configuración de Gist
         with st.expander("⚙️ Configurar Gist"):
             github_token_input = st.text_input(
                 "GitHub Token", 
@@ -540,7 +516,6 @@ with st.sidebar:
                 help="ID del Gist existente"
             )
         
-        # Botones de acción para Gist
         gist_manager = GistManager(
             github_token_input or GITHUB_TOKEN, 
             gist_id_input or st.session_state.get('gist_id')
@@ -586,7 +561,6 @@ with st.sidebar:
         st.markdown("### 📊 Panel de Administrador")
         st.info("🔑 Configura tu GitHub Token en secrets.toml para gestionar logs")
         
-        # Mostrar estadísticas básicas sin Gist
         if chat_log:
             st.markdown(f"""
             <div class="gist-info">
@@ -597,16 +571,13 @@ with st.sidebar:
             </div>
             """, unsafe_allow_html=True)
 
-# ----------------- ¡AQUÍ ESTÁ EL CAMBIO IMPORTANTE! -----------------
 
-# Inicializar variables de sesión de forma independiente
 if "history" not in st.session_state:
     st.session_state.history = []
 
 if "gist_id" not in st.session_state:
     st.session_state.gist_id = GIST_ID
 
-# Mensaje de bienvenida (solo si el historial está vacío)
 if not st.session_state.history:
     with st.chat_message("assistant"):
         st.markdown(f"""
@@ -620,12 +591,10 @@ if not st.session_state.history:
         ¿En qué puedo ayudarte hoy?
         """)
 
-# Mostrar historial completo
 for message in st.session_state.history:
     st.chat_message(message["role"]).markdown(message["content"])
 
-# Input del usuario y procesamiento
-if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
+if prompt := st.chat_input("Comparte lo que está en tu mente...", icons_size="small"):
     st.chat_message("user").markdown(prompt)
     st.session_state.history.append({"role": "user", "content": prompt})
     
