@@ -487,7 +487,7 @@ with st.sidebar:
     """)
     
     if st.button("🔄 Nueva Conversación"):
-    st.session_state.history = []
+        st.session_state.history = []
     
     if ADMIN_MODE and GITHUB_TOKEN:
         st.markdown("---")
