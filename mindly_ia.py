@@ -614,9 +614,9 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
                             
                             intencion = detectar_intencion(prompt)
                             guardar_log(prompt, respuesta_final, intencion)
-
-    except Exception as e:
-        st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
-        respuesta_final = "Lo siento, hubo un problema al procesar tu mensaje. ¿Podrías intentarlo de nuevo?"
-        st.chat_message("assistant").markdown(respuesta_final)
-        st.session_state.history.append({"role": "assistant", "content": respuesta_final})
+        
+        except Exception as e:
+            st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
+            respuesta_final = "Lo siento, hubo un problema al procesar tu mensaje. ¿Podrías intentarlo de nuevo?"
+            st.chat_message("assistant").markdown(respuesta_final)
+            st.session_state.history.append({"role": "assistant", "content": respuesta_final})
