@@ -477,12 +477,10 @@ st.set_page_config(
 # Aplicar estilos personalizados
 load_custom_css()
 
-# Indicador visual de modo administrador (solo cuando admin=true)
+# Indicador visual de modo administrador
 if ADMIN_MODE:
     st.markdown("""
-    <div style="position: fixed; top: 10px; right: 10px; background: rgba(39, 174, 96, 0.9); 
-         color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; 
-         font-weight: 500; z-index: 1000;">
+    <div class="admin-indicator">
         👑 Modo Administrador
     </div>
     """, unsafe_allow_html=True)
@@ -513,7 +511,7 @@ with st.sidebar:
         st.rerun()
     
     # === GESTIÓN DE LOGS (SOLO MODO ADMIN) ===
-    if ADMIN_MODE and GITHUB_TOKEN:  # Solo mostrar si es admin Y hay token
+    if ADMIN_MODE and GITHUB_TOKEN:
         st.markdown("---")
         st.markdown("### 📊 Panel de Administrador")
         
@@ -599,49 +597,46 @@ with st.sidebar:
             </div>
             """, unsafe_allow_html=True)
 
-# Inicializar variables de sesión
+# ----------------- ¡AQUÍ ESTÁ EL CAMBIO IMPORTANTE! -----------------
+
+# Inicializar variables de sesión de forma independiente
 if "history" not in st.session_state:
     st.session_state.history = []
 
 if "gist_id" not in st.session_state:
     st.session_state.gist_id = GIST_ID
 
-    if len(st.session_state.history) == 0:
-        with st.chat_message("assistant"):
-            # Mensaje de bienvenida personalizado con el nombre
-            st.markdown(f"""
-            ¡Hola, soy **Mindly**, tu compañero de bienestar mental. 🌟
-            
-            Estoy aquí para ayudarte con:
-            - Manejo de emociones y estrés
-            - Técnicas de relajación y mindfulness  
-            - Información sobre psicología
-            - Apoyo en momentos difíciles
-            
-            ¿En qué puedo ayudarte hoy?
-            """)
-
-    # Mostrar historial
-    for i in range(0, len(st.session_state.history), 2):
-        st.chat_message("user").markdown(st.session_state.history[i]["content"])
-        if i+1 < len(st.session_state.history):
-            st.chat_message("assistant").markdown(st.session_state.history[i+1]["content"])
-
-    # Input del usuario
-    if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
-        st.chat_message("user").markdown(prompt)
-        st.session_state.history.append({"role": "user", "content": prompt})
+# Mensaje de bienvenida (solo si el historial está vacío)
+if not st.session_state.history:
+    with st.chat_message("assistant"):
+        st.markdown(f"""
+        ¡Hola, soy **Mindly**, tu compañero de bienestar mental. 🌟
+        Estoy aquí para ayudarte con:
+        - Manejo de emociones y estrés
+        - Técnicas de relajación y mindfulness  
+        - Información sobre psicología
+        - Apoyo en momentos difíciles
         
-        with st.spinner("🧠 Mindly está reflexionando..."):
-            try:
-                # <<== MODIFICADO: Pasamos el mensaje de sistema personalizado
-                respuesta_final = chat(prompt, st.session_state.history)
-                st.chat_message("assistant").markdown(respuesta_final)
-            except Exception as e:
-                st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
-                respuesta_final = "Lo siento, hubo un problema al procesar tu mensaje. ¿Podrías intentarlo de nuevo?"
-                st.chat_message("assistant").markdown(respuesta_final)
-        
-        st.session_state.history.append({"role": "assistant", "content": respuesta_final})
-        intencion = detectar_intencion(prompt)
-        guardar_log(prompt, respuesta_final, intencion)
+        ¿En qué puedo ayudarte hoy?
+        """)
+
+# Mostrar historial completo
+for message in st.session_state.history:
+    st.chat_message(message["role"]).markdown(message["content"])
+
+# Input del usuario y procesamiento
+if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
+    st.chat_message("user").markdown(prompt)
+    st.session_state.history.append({"role": "user", "content": prompt})
+    
+    with st.spinner("🧠 Mindly está reflexionando..."):
+        try:
+            respuesta_final = chat(prompt, st.session_state.history, system_message)
+            st.chat_message("assistant").markdown(respuesta_final)
+            st.session_state.history.append({"role": "assistant", "content": respuesta_final})
+            intencion = detectar_intencion(prompt)
+            guardar_log(prompt, respuesta_final, intencion)
+        except Exception as e:
+            st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
+            respuesta_final = "Lo siento, hubo un problema al procesar tu mensaje. ¿Podrías intentarlo de nuevo?"
+            st.chat_message("assistant").markdown(respuesta_final)
