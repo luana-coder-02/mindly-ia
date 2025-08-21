@@ -17,11 +17,6 @@ El objetivo es ofrecer un recurso empático y accesible que proporcione informac
 - **JSON**
 - **CSS**
 
-## ✨ Mejoras Recientes
-El proyecto ha evolucionado con funcionalidades adicionales para mejorar la experiencia del usuario y la versatilidad del chatbot.
-
-- **Sistema de Evaluación:** Se añadió un mecanismo de **retroalimentación** con botones de "👍" y "👎" para que los usuarios puedan evaluar la utilidad de las respuestas. Esta funcionalidad permite recopilar datos valiosos para futuras optimizaciones del modelo.
-
 ## 🔮 Próximas Mejoras y Hoja de Ruta
 Las siguientes funcionalidades se encuentran en la hoja de ruta para futuras versiones:
 
