@@ -29,25 +29,6 @@ MAX_HISTORY = 8
 # Obtener API key de forma segura
 MISTRAL_API_KEY = st.secrets.get("MISTRAL_API_KEY", os.getenv("MISTRAL_API_KEY", ""))
 
-# Si no hay API key configurada, pedirla en la interfaz
-if not MISTRAL_API_KEY:
-    st.warning("🔑 Se requiere configurar la API key de Mistral")
-    with st.sidebar:
-        st.markdown("### ⚙️ Configuración")
-        st.info("💡 Obtén tu API key en: https://console.mistral.ai/")
-        api_key_input = st.text_input(
-            "API Key de Mistral:", 
-            value="",
-            type="password",
-            help="Introduce tu API key de Mistral"
-        )
-        if api_key_input and len(api_key_input) > 10:
-            MISTRAL_API_KEY = api_key_input
-            st.success("✅ API Key configurada")
-        else:
-            st.error("👆 Configura tu API key para continuar")
-            st.stop()
-
 # Crear cliente de Mistral
 try:
     client = Mistral(api_key=MISTRAL_API_KEY)
