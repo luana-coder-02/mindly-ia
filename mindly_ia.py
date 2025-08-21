@@ -594,7 +594,7 @@ if not st.session_state.history:
 for message in st.session_state.history:
     st.chat_message(message["role"]).markdown(message["content"])
 
-if prompt := st.chat_input("Comparte lo que está en tu mente...", icons_size="small"):
+if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
     st.chat_message("user").markdown(prompt)
     st.session_state.history.append({"role": "user", "content": prompt})
     
