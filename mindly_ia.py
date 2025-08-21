@@ -439,9 +439,9 @@ def guardar_log(usuario_msg, modelo_resp, intencion):
     with open(LOG_FILE, "w", encoding="utf-8") as f:
         json.dump(chat_log, f, ensure_ascii=False, indent=2)
 
-def chat(message, history):
+def chat(message, history, system_prompt):
     try:
-        messages = [{"role": "system", "content": system_message}]
+        messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history[-MAX_HISTORY*2:])
         messages.append({"role": "user", "content": message})
 
@@ -606,41 +606,71 @@ if "history" not in st.session_state:
 if "gist_id" not in st.session_state:
     st.session_state.gist_id = GIST_ID
 
+if "user_name" not in st.session_state:
+    st.session_state.user_name = None
+
+show_chat = False
+system_message_personalized = system_message  # Por defecto, usamos el mensaje original
+
+# Si no tenemos el nombre, lo pedimos
+if not st.session_state.user_name:
+    st.info("👋 ¡Hola! Para empezar, ¿cómo te gustaría que te llame?")
+    name_input = st.text_input("Escribe tu nombre o un apodo aquí", key="name_input_key")
+    
+    # Si el usuario presiona Enter después de escribir el nombre...
+    if name_input:
+        st.session_state.user_name = name_input.strip()
+        st.rerun() # Volvemos a ejecutar para limpiar el input y mostrar el chat
+else:
+    # Si ya tenemos el nombre, activamos la visualización del chat
+    show_chat = True
+    
+    # Y modificamos el system_message para incluir el nombre
+    system_message_personalized = (
+        f"{system_message} "
+        f"El nombre del usuario es {st.session_state.user_name}. "
+        "Dirígete a él por su nombre cuando sea apropiado para crear una conexión más cercana y empática."
+    )
+
 # Mensaje de bienvenida si no hay historial
-if len(st.session_state.history) == 0:
-    with st.chat_message("assistant"):
-        st.markdown("""
-        ¡Hola! Soy **Mindly**, tu compañero de bienestar mental. 🌟
-        
-        Estoy aquí para ayudarte con:
-        - Manejo de emociones y estrés
-        - Técnicas de relajación y mindfulness  
-        - Información sobre psicología
-        - Apoyo en momentos difíciles
-        
-        ¿En qué puedo ayudarte hoy?
-        """)
+# Solo mostramos el chat si tenemos el nombre del usuario
+if show_chat:
+    if len(st.session_state.history) == 0:
+        with st.chat_message("assistant"):
+            # Mensaje de bienvenida personalizado con el nombre
+            st.markdown(f"""
+            ¡Hola, **{st.session_state.user_name}**! Soy **Mindly**, tu compañero de bienestar mental. 🌟
+            
+            Estoy aquí para ayudarte con:
+            - Manejo de emociones y estrés
+            - Técnicas de relajación y mindfulness  
+            - Información sobre psicología
+            - Apoyo en momentos difíciles
+            
+            ¿En qué puedo ayudarte hoy?
+            """)
 
-# Mostrar historial
-for i in range(0, len(st.session_state.history), 2):
-    st.chat_message("user").markdown(st.session_state.history[i]["content"])
-    if i+1 < len(st.session_state.history):
-        st.chat_message("assistant").markdown(st.session_state.history[i+1]["content"])
+    # Mostrar historial
+    for i in range(0, len(st.session_state.history), 2):
+        st.chat_message("user").markdown(st.session_state.history[i]["content"])
+        if i+1 < len(st.session_state.history):
+            st.chat_message("assistant").markdown(st.session_state.history[i+1]["content"])
 
-# Input del usuario
-if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
-    st.chat_message("user").markdown(prompt)
-    st.session_state.history.append({"role": "user", "content": prompt})
-    
-    with st.spinner("🧠 Mindly está reflexionando..."):
-        try:
-            respuesta_final = chat(prompt, st.session_state.history)
-            st.chat_message("assistant").markdown(respuesta_final)
-        except Exception as e:
-            st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
-            respuesta_final = "Lo siento, hubo un problema al procesar tu mensaje. ¿Podrías intentarlo de nuevo?"
-            st.chat_message("assistant").markdown(respuesta_final)
-    
-    st.session_state.history.append({"role": "assistant", "content": respuesta_final})
-    intencion = detectar_intencion(prompt)
-    guardar_log(prompt, respuesta_final, intencion)
+    # Input del usuario
+    if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
+        st.chat_message("user").markdown(prompt)
+        st.session_state.history.append({"role": "user", "content": prompt})
+        
+        with st.spinner("🧠 Mindly está reflexionando..."):
+            try:
+                # <<== MODIFICADO: Pasamos el mensaje de sistema personalizado
+                respuesta_final = chat(prompt, st.session_state.history, system_message_personalized)
+                st.chat_message("assistant").markdown(respuesta_final)
+            except Exception as e:
+                st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
+                respuesta_final = "Lo siento, hubo un problema al procesar tu mensaje. ¿Podrías intentarlo de nuevo?"
+                st.chat_message("assistant").markdown(respuesta_final)
+        
+        st.session_state.history.append({"role": "assistant", "content": respuesta_final})
+        intencion = detectar_intencion(prompt)
+        guardar_log(prompt, respuesta_final, intencion)
