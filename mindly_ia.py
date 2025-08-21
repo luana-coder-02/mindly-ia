@@ -611,9 +611,9 @@ if prompt := st.chat_input("💭 Comparte lo que está en tu mente..."):
                     with col2:
                         if st.button("👎", key=f"feedback_dislike_{len(st.session_state.history)}"):
                             st.toast("¡Entendido! Lo tendremos en cuenta.")
-
-        intencion = detectar_intencion(prompt)
-        guardar_log(prompt, respuesta_final, intencion)
+                            
+                            intencion = detectar_intencion(prompt)
+                            guardar_log(prompt, respuesta_final, intencion)
 
     except Exception as e:
         st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
