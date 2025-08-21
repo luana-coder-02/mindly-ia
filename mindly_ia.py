@@ -29,11 +29,37 @@ MAX_HISTORY = 8
 # Obtener API key de forma segura
 MISTRAL_API_KEY = st.secrets.get("MISTRAL_API_KEY", os.getenv("MISTRAL_API_KEY", ""))
 
+# Verificar que existe la API key y no está vacía
+if not MISTRAL_API_KEY or MISTRAL_API_KEY.strip() == "":
+    st.error("❌ No se encontró la API key de Mistral o está vacía")
+    st.info("💡 Configura MISTRAL_API_KEY en .streamlit/secrets.toml o como variable de entorno")
+    
+    # En modo admin, mostrar más detalles para debugging
+    if ADMIN_MODE:
+        st.warning("🔧 Debug Info (Solo Admin):")
+        st.code(f"""
+        secrets: {st.secrets.get("MISTRAL_API_KEY", "NO ENCONTRADO")}
+        env: {os.getenv("MISTRAL_API_KEY", "NO ENCONTRADO")}
+        """)
+    st.stop()
+
+# Verificar que la API key tiene un formato válido
+if len(MISTRAL_API_KEY.strip()) < 20:  # Las API keys suelen ser largas
+    st.error("❌ La API key parece ser demasiado corta o inválida")
+    if ADMIN_MODE:
+        st.code(f"API Key length: {len(MISTRAL_API_KEY)} characters")
+    st.stop()
+
 # Crear cliente de Mistral
 try:
-    client = Mistral(api_key=MISTRAL_API_KEY)
+    client = Mistral(api_key=MISTRAL_API_KEY.strip())
 except Exception as e:
-    st.error(f"❌ Error con la API key: {str(e)}")
+    error_str = str(e)
+    if "Illegal header value" in error_str:
+        st.error("❌ Error: API key inválida o vacía")
+        st.info("🔑 Verifica que tu MISTRAL_API_KEY esté correctamente configurada")
+    else:
+        st.error(f"❌ Error al conectar con Mistral: {error_str}")
     st.stop() 
 
 # ==== CONFIGURACIÓN DE GIST ====
