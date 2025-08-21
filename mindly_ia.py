@@ -26,8 +26,11 @@ system_message = (
 LOG_FILE = "chat_log.json"
 MAX_HISTORY = 8
 
-# Obtener API key de forma segura
-MISTRAL_API_KEY = st.secrets.get("MISTRAL_API_KEY", os.getenv("MISTRAL_API_KEY", ""))
+# Obtener API key de forma segura - buscar en ambos nombres posibles
+MISTRAL_API_KEY = st.secrets.get("MISTRAL_API_KEY", 
+                 st.secrets.get("mistralapi", 
+                 os.getenv("MISTRAL_API_KEY", 
+                 os.getenv("mistralapi", ""))))
 
 # Verificar que existe la API key y no está vacía
 if not MISTRAL_API_KEY or MISTRAL_API_KEY.strip() == "":
