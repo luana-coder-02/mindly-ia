@@ -635,7 +635,7 @@ if "gist_id" not in st.session_state:
         with st.spinner("🧠 Mindly está reflexionando..."):
             try:
                 # <<== MODIFICADO: Pasamos el mensaje de sistema personalizado
-                respuesta_final = chat(prompt, st.session_state.history, system_message_personalized)
+                respuesta_final = chat(prompt, st.session_state.history)
                 st.chat_message("assistant").markdown(respuesta_final)
             except Exception as e:
                 st.error(f"❌ Error al procesar tu mensaje: {str(e)}")
